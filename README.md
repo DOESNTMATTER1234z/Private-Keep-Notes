@@ -9,7 +9,7 @@ Written in **pure Python 3 standard library** (no `pip install` anything) plus *
 
 ## Features
 
-- 📝 **Text notes and checklists** — switch between free-form text and to-do lists
+- 📝 **Text notes and checklists**  switch between free-form text and to-do lists
 - 🎨 **12 color themes** per note (default, red, orange, yellow, green, teal, blue, dark blue, purple, pink, brown, gray)
 - 📌 **Pin** important notes to the top
 - 🏷️ **Labels** for organization, with rename and delete
@@ -26,7 +26,7 @@ Written in **pure Python 3 standard library** (no `pip install` anything) plus *
 
 ## Requirements
 
-- **Python 3.7+** — that's it. No dependencies, no virtualenv, no package manager.
+- **Python 3.7+**  that's it. No dependencies, no virtualenv, no package manager.
 - Optionally, **[Tailscale](https://tailscale.com/)** if you want to reach the server from other devices without exposing it to the internet.
 
 ---
