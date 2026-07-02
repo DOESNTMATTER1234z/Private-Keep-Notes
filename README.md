@@ -1,6 +1,7 @@
 # Igi-Notes
 
-A self-hosted, single-user Google Keep clone. Your notes stay on your own machine, and every device on your Tailscale network can read/write them with near-instant sync — no cloud account, no telemetry, no tracking.
+A self-hosted, single-user Google Keep clone. Your notes stay on your own machine, and every device on your Tailscale network can read/write them with near-instant sync. 
+No cloud account, no telemetry, no tracking.
 
 Written in **pure Python 3 standard library** (no `pip install` anything) plus **vanilla HTML/CSS/JavaScript** (no frameworks, no build step).
 
