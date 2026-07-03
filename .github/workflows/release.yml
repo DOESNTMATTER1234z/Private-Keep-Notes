@@ -1,0 +1,87 @@
+# =============================================================================
+#  GitHub Actions: build downloadable IgiNotes apps for Windows, macOS, Linux
+#
+#  Put this file at:   .github/workflows/release.yml   in your repository.
+#
+#  To publish a release:
+#      git tag v1.0
+#      git push --tags
+#  GitHub then builds all three apps and attaches them to a Release at
+#  https://github.com/<you>/<repo>/releases -- that's the page you link to.
+#
+#  You can also run it manually (Actions tab -> this workflow -> Run workflow)
+#  to test; manual runs produce downloadable "artifacts" instead of a Release.
+# =============================================================================
+name: Build downloadable apps
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # lets the workflow attach files to a Release
+
+jobs:
+  build:
+    name: Build for ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: Windows
+            artifact: IgiNotes-windows.exe
+          - os: macos-latest
+            label: macOS
+            artifact: IgiNotes-macos.zip
+          - os: ubuntu-latest
+            label: Linux
+            artifact: IgiNotes-linux.tar.gz
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install build tools
+        run: python -m pip install --upgrade pip pyinstaller pywebview
+
+      # --add-data uses ";" on Windows and ":" everywhere else
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name IgiNotes --add-data "index.html;." IgiNotes.py
+
+      - name: Build (macOS / Linux)
+        if: runner.os != 'Windows'
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name IgiNotes --add-data "index.html:." IgiNotes.py
+
+      - name: Package (Windows)
+        if: runner.os == 'Windows'
+        run: mv dist/IgiNotes.exe ${{ matrix.artifact }}
+
+      # ditto preserves the .app bundle structure and permissions in the zip
+      - name: Package (macOS)
+        if: runner.os == 'macOS'
+        run: ditto -c -k --keepParent dist/IgiNotes.app ${{ matrix.artifact }}
+
+      # tar.gz keeps the executable bit, which a bare download would lose
+      - name: Package (Linux)
+        if: runner.os == 'Linux'
+        run: tar -czf ${{ matrix.artifact }} -C dist IgiNotes
+
+      # Every run (including manual test runs) keeps the file as an artifact...
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.artifact }}
+
+      # ...and tagged runs additionally publish it on the Releases page.
+      - name: Attach to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}

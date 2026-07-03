@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Igi-Notes</title>
+    <style>
+        :root {
+            --bg-color: #202124;
+            --sidebar-bg: #202124;
+
+            --note-default: #202124;
+            --note-red: #610c09;
+            --note-orange: #771a00;
+            --note-yellow: #655e02;
+            --note-green: #1b4b01;
+            --note-teal: #02504a;
+            --note-blue: #015163;
+            --note-darkblue: #01285b;
+            --note-purple: #2b0157;
+            --note-pink: #590b3b;
+            --note-brown: #472400;
+            --note-gray: #3c3f43;
+            --text-color: #e8eaed;
+            --text-muted: #9aa0a6;
+            --border-color: #5f6368;
+            --accent: #fbbc04;
+            --hover-bg: rgba(255,255,255,0.04);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header / Topbar --- */
+        header {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 64px;
+            padding: 0 20px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            background: var(--bg-color);
+            z-index: 100;
+        }
+
+        header .logo { font-size: 1.5rem; display: flex; align-items: center; gap: 15px; cursor: pointer;}
+        header .logo span { color: var(--accent); font-weight: bold; font-size: 1.8rem; }
+        
+        .search-bar {
+            margin-left: 50px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 8px;
+            padding: 10px 20px;
+            width: 400px;
+            display: flex;
+        }
+        .search-bar input { border: none; background: transparent; color: white; width: 100%; outline: none;}
+
+        /* --- Layout --- */
+        .sidebar {
+            width: 280px;
+            padding-top: 80px;
+            background: var(--sidebar-bg);
+            height: 100vh;
+            overflow-y: auto;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-radius: 0 25px 25px 0;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-item:hover { background: var(--hover-bg); }
+        .nav-item.active { background: #41331c; color: var(--accent); }
+
+        /* Action Buttons (Mobile + Desktop) */
+        .nav-item .action-btns {
+            margin-left: auto;
+            display: flex;
+            gap: 8px;
+            opacity: 0.7;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+        .nav-item .action-btns span { cursor: pointer; }
+        .nav-item .action-btns span:hover { color: var(--text-color); }
+        .nav-item .action-btns .delete-label-btn:hover { color: #f28b82; }
+        
+        @media (hover: hover) and (pointer: fine) {
+            .nav-item .action-btns {
+                opacity: 0;
+                transition: opacity 0.2s;
+            }
+            .nav-item:hover .action-btns {
+                opacity: 1;
+            }
+        }
+
+        .main-content {
+            flex: 1;
+            padding-top: 80px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- Creator --- */
+        .creator-wrapper { width: 100%; max-width: 600px; margin: 20px 0; position: relative; }
+        .note-creator {
+            background-color: var(--note-default);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 2px 0 rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; gap: 10px;
+            transition: all 0.2s;
+        }
+        
+        input, textarea { background: transparent; border: none; color: var(--text-color); font-family: inherit; outline: none; width: 100%; resize: none;}
+        input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+        .creator-title-row { display: none; justify-content: space-between; align-items: flex-start; }
+        .note-creator.active .creator-title-row { display: flex; }
+        .note-creator input.title { font-size: 1.1rem; font-weight: bold; margin-bottom: 10px; }
+        .note-creator textarea { font-size: 1rem; min-height: 45px; }
+        
+        .creator-toolbar { display: none; justify-content: space-between; align-items: center; margin-top: 10px; }
+        .note-creator.active .creator-toolbar { display: flex; }
+        .toolbar-group { display: flex; gap: 10px; }
+        .icon-btn { background: transparent; border: none; color: var(--text-muted); cursor: pointer; border-radius: 50%; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.1rem;}
+        .icon-btn:hover { background: var(--hover-bg); color: var(--text-color); }
+        .icon-btn.active { color: var(--accent); }
+
+        .close-btn { background: transparent; color: var(--text-color); border: none; padding: 8px 24px; border-radius: 4px; cursor: pointer; font-weight: bold;}
+        .close-btn:hover { background: var(--hover-bg); }
+
+        /* --- Grids --- */
+        .grid-container { width: 100%; max-width: 1200px; padding: 20px; }
+        .grid-section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 20px 0 10px 10px; font-weight: bold;}
+        .notes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 15px;
+            align-items: start;
+        }
+
+        /* --- Note Card --- */
+        .note-card {
+            background-color: var(--note-default);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            position: relative;
+            transition: box-shadow 0.2s;
+        }
+        .note-card:hover { box-shadow: 0 1px 2px 0 rgba(0,0,0,0.6), 0 2px 6px 2px rgba(0,0,0,0.3); }
+        .note-card .title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            line-height: 1.35;
+            min-height: 28px;
+            overflow: hidden;
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+        .note-card textarea { min-height: 20px; overflow: hidden; }
+        
+        .card-toolbar { display: flex; gap: 5px; opacity: 0; transition: opacity 0.2s; margin-top: 10px;}
+        .note-card:hover .card-toolbar { opacity: 1; }
+
+        .pin-btn { position: absolute; top: 10px; right: 10px; opacity: 0; }
+        .note-card:hover .pin-btn { opacity: 1; }
+
+        /* --- Color Palette Popup --- */
+        .color-palette {
+            position: absolute; bottom: 40px; left: 0; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; display: none; gap: 5px; z-index: 10; box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+        }
+        .color-palette.show { display: flex; flex-wrap: wrap; width: 150px; }
+        .color-dot { width: 28px; height: 28px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; }
+        .color-dot:hover { border-color: var(--text-color); }
+
+        /* --- Checklists --- */
+        .checklist-item { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .checklist-item input[type="checkbox"] { width: auto; cursor: pointer; }
+        .checklist-item input[type="text"] { flex: 1; }
+        .checklist-item.checked input[type="text"] { text-decoration: line-through; color: var(--text-muted); }
+        .add-list-item { display: flex; align-items: center; gap: 10px; color: var(--text-muted); padding-top: 10px; border-top: 1px solid var(--border-color); cursor: pointer; }
+
+        .image-preview-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .image-preview { position: relative; max-width: 100%; border: 1px solid var(--border-color); border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.04); }
+        .image-preview img { display: block; max-width: 100%; max-height: 180px; object-fit: cover; }
+        .image-preview .remove-image { position: absolute; top: 6px; right: 6px; border: none; border-radius: 50%; width: 24px; height: 24px; cursor: pointer; background: rgba(0,0,0,0.7); color: white; }
+        .image-dropzone { border: 1px dashed var(--border-color); border-radius: 6px; padding: 10px; text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-top: 8px; }
+        .image-dropzone.dragover { border-color: var(--accent); color: var(--accent); }
+        .image-hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+        
+        /* --- Labels --- */
+        .label-chip { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; margin: 2px;}
+        .label-chip span { cursor: pointer; }
+
+        /* --- Trash Banner --- */
+        .trash-banner { display: none; width: 100%; max-width: 1200px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; justify-content: space-between; align-items: center; font-style: italic;}
+        .trash-banner button { color: #8ab4f8; background: transparent; border: none; cursor: pointer; font-weight: bold; }
+        .trash-banner button:hover { background: rgba(138, 180, 248, 0.1); padding: 5px 10px; border-radius: 4px;}
+
+        /* Drag and drop classes */
+        .sortable-ghost { opacity: 0.4; }
+        .nav-item:focus-visible { background: var(--hover-bg); outline: 1px solid var(--border-color); }
+
+        /* In-page dialogs (replace prompt/confirm/alert, which are unreliable
+           inside embedded desktop webviews) */
+        .ui-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000;
+        }
+        .ui-modal {
+            background: var(--bg-color); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px; width: 90%; max-width: 420px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .ui-modal-message { white-space: pre-wrap; }
+        .ui-modal-input {
+            background: rgba(255,255,255,0.08); border: none; border-radius: 6px;
+            padding: 10px 12px; color: var(--text-color); outline: none;
+            font-family: inherit;
+        }
+        .ui-modal-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+        .ui-modal-ok { background: var(--accent); color: #202124; }
+
+        /* Save indicator ("Saving…" / "Saved") in the header */
+        .save-status { color: var(--text-muted); font-size: 0.85rem; opacity: 0; transition: opacity .25s; margin-left: auto; white-space: nowrap; }
+        .save-status.visible { opacity: 1; }
+
+        /* Snackbar (archive / restore feedback) */
+        .snackbar {
+            position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 16px);
+            background: #333; color: var(--text-color);
+            border: 1px solid var(--border-color); border-radius: 8px;
+            padding: 12px 18px; display: flex; align-items: center; gap: 18px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+            opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s;
+            z-index: 950;
+        }
+        .snackbar.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+        .snackbar button {
+            background: none; border: none; color: var(--accent);
+            font-weight: bold; cursor: pointer; font-family: inherit;
+            text-transform: uppercase; font-size: 0.85rem;
+        }
+
+        /* Expanded note editor (click a card to open) */
+        .note-editor-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 6vh 16px; z-index: 900; overflow-y: auto;
+        }
+        .note-card.note-editor { width: 100%; max-width: 640px; margin: 0; cursor: default; }
+        .editor-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 0.75rem; margin-top: 6px; }
+        .creator-count { color: var(--text-muted); font-size: 0.75rem; align-self: center; margin-left: auto; margin-right: 10px; white-space: nowrap; }
+        .notes-grid .note-card { cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo" onclick="setView('notes')"><span>☰</span> Igi-Notes</div>
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="Search" oninput="renderGrids()">
+        </div>
+        <span id="saveStatus" class="save-status" aria-live="polite"></span>
+        <div id="serverControls" style="margin-left:auto; display:none; align-items:center; gap:10px;">
+            <span id="serverStatus" style="color:#9aa0a6; font-size:0.9rem;">Server on</span>
+            <button id="serverToggle" onclick="toggleServerFromUi()" style="background:#1b4b01; color:white; border:none; border-radius:999px; padding:8px 14px; cursor:pointer; font-weight:bold;">ON</button>
+        </div>
+    </header>
+
+    <div class="sidebar" id="sidebar">
+        </div>
+
+    <div class="main-content">
+        <div class="creator-wrapper" id="creatorWrapper">
+            <div class="note-creator" id="creator">
+                <div class="creator-title-row">
+                    <input type="text" id="create-title" class="title" placeholder="Title">
+                    <button class="icon-btn pin-btn-creator" onclick="creatorData.pinned = !creatorData.pinned; this.classList.toggle('active')">📌</button>
+                </div>
+                
+                <div id="create-body-container">
+                    <textarea id="create-body" placeholder="Take a note..." onfocus="activateCreator()"></textarea>
+                </div>
+                
+                <div id="create-list-container" style="display: none;">
+                    <div id="create-list-items"></div>
+                    <div class="add-list-item" onclick="addCreatorListItem()"><span>+</span> List item</div>
+                </div>
+
+                <div class="creator-toolbar">
+                    <div class="toolbar-group">
+                        <button class="icon-btn" title="Remind me" onclick="addReminderPrompt(null, true)">🔔</button>
+                        <div style="position: relative;">
+                            <button class="icon-btn" title="Color" onclick="togglePalette('creator-palette')">🎨</button>
+                            <div class="color-palette" id="creator-palette"></div>
+                        </div>
+                        <button class="icon-btn" title="Toggle List" onclick="toggleCreatorList()">☑️</button>
+                        <button class="icon-btn" title="Add Label" onclick="addLabelPrompt(null, true)">🏷️</button>
+                        <button class="icon-btn" title="Add image" onclick="document.getElementById('creator-image-input').click()">🖼️</button>
+                    </div>
+                    <span class="creator-count" id="creatorCount"></span>
+                    <button class="close-btn" onclick="submitNote()">Close</button>
+                </div>
+                <input id="creator-image-input" type="file" accept="image/*" multiple style="display:none;" onchange="handleImageSelection(this.files, true)">
+                <div id="creator-image-dropzone" class="image-dropzone" onclick="document.getElementById('creator-image-input').click()" ondragover="event.preventDefault(); this.classList.add('dragover');" ondragleave="this.classList.remove('dragover');" ondrop="handleImageDrop(event, true)">Drop images here, paste them, or tap to browse</div>
+                <div id="creator-image-preview" class="image-preview-list"></div>
+                <div id="creator-labels-display"></div>
+            </div>
+        </div>
+
+        <div class="trash-banner" id="trashBanner">
+            Notes in Trash are deleted after 7 days.
+            <button onclick="emptyTrash()">Empty Trash</button>
+        </div>
+
+        <div class="grid-container" id="pinnedContainer" style="display: none;">
+            <div class="grid-section-title">Pinned</div>
+            <div class="notes-grid" id="grid-pinned"></div>
+        </div>
+
+        <div class="grid-container" id="othersContainer">
+            <div class="grid-section-title" id="othersTitle" style="display: none;">Others</div>
+            <div class="notes-grid" id="grid-others"></div>
+        </div>
+    </div>
+
+    <!-- Expanded note editor (click a note card to open) -->
+    <div class="note-editor-overlay" id="noteEditor" style="display:none;">
+        <div class="note-card note-editor" id="noteEditorCard"></div>
+    </div>
+    <input id="editor-image-input" type="file" accept="image/*" multiple style="display:none;" onchange="handleImageSelection(this.files, false, editorNoteId)">
+
+    <!-- Snackbar (archive / restore feedback) -->
+    <div class="snackbar" id="snackbar"></div>
+
+    <!-- In-page dialog (replaces prompt/confirm/alert) -->
+    <div class="ui-modal-overlay" id="uiModal" style="display:none;">
+        <div class="ui-modal">
+            <div class="ui-modal-message" id="uiModalMessage"></div>
+            <input type="text" id="uiModalInput" class="ui-modal-input" style="display:none;">
+            <div class="ui-modal-buttons">
+                <button class="close-btn" id="uiModalCancel">Cancel</button>
+                <button class="close-btn ui-modal-ok" id="uiModalOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State ---
+        let notes = [];
+        let labels = [];
+        let currentView = 'notes'; // notes, reminders, archive, trash, label:{id}
+        let serverEnabled = true;
+        
+        let creatorData = {
+            color: 'default',
+            type: 'text',
+            pinned: false,
+            items: [],
+            labels: [],
+            reminder: null,
+            images: []
+        };
+
+        const colors = ['default', 'red', 'orange', 'yellow', 'green', 'teal', 'blue', 'darkblue', 'purple', 'pink', 'brown', 'gray'];
+
+        // --- DOM Elements ---
+        const creator = document.getElementById('creator');
+        const titleInput = document.getElementById('create-title');
+        const bodyInput = document.getElementById('create-body');
+        const sidebarEl = document.getElementById('sidebar');
+        const creatorPalette = document.getElementById('creator-palette');
+
+        // Keyboard support for the sidebar (nav items are divs, not buttons)
+        sidebarEl.addEventListener('keydown', (e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('nav-item')) {
+                e.preventDefault();
+                e.target.click();
+            }
+        });
+
+        // --- In-page dialogs -------------------------------------------------
+        // window.prompt/confirm/alert are unreliable (often no-ops) inside
+        // QWebEngineView / pywebview, so all user dialogs go through these.
+        function showModal({message, withInput = false, defaultValue = '', withCancel = true}) {
+            return new Promise(resolve => {
+                const overlay = document.getElementById('uiModal');
+                const msg = document.getElementById('uiModalMessage');
+                const input = document.getElementById('uiModalInput');
+                const ok = document.getElementById('uiModalOk');
+                const cancel = document.getElementById('uiModalCancel');
+                msg.textContent = message;
+                input.style.display = withInput ? 'block' : 'none';
+                input.value = defaultValue || '';
+                cancel.style.display = withCancel ? 'inline-block' : 'none';
+                overlay.style.display = 'flex';
+                const done = (val) => {
+                    overlay.style.display = 'none';
+                    ok.onclick = cancel.onclick = input.onkeydown = overlay.onclick = null;
+                    resolve(val);
+                };
+                ok.onclick = () => done(withInput ? input.value : true);
+                cancel.onclick = () => done(withInput ? null : false);
+                overlay.onclick = (e) => { if (e.target === overlay && withCancel) done(withInput ? null : false); };
+                input.onkeydown = (e) => {
+                    if (e.key === 'Enter') done(input.value);
+                    if (e.key === 'Escape') done(withInput ? null : false);
+                };
+                setTimeout(() => (withInput ? input : ok).focus(), 0);
+            });
+        }
+        const uiAlert = (m) => showModal({message: m, withCancel: false});
+        const uiConfirm = (m) => showModal({message: m});
+        const uiPrompt = (m, d = '') => showModal({message: m, withInput: true, defaultValue: d});
+
+        // --- Small helpers ----------------------------------------------------
+        // Ids are interpolated into inline onclick="..." handlers below; the
+        // server only stores [\w-]+ ids, and this strips anything else as a
+        // second layer of defence against stored XSS.
+        function safeId(id) {
+            return String(id ?? '').replace(/[^\w-]/g, '');
+        }
+
+        // fetch() only rejects on network errors; this also throws on 4xx/5xx
+        // so optimistic UI updates can be rolled back.
+        async function apiFetch(url, options = {}) {
+            const res = await fetch(url, options);
+            if (!res.ok) throw new Error(`${options.method || 'GET'} ${url} failed (${res.status})`);
+            return res;
+        }
+
+        // --- Save indicator ("Saving…" / "Saved") ------------------------------
+        // Every state-changing request goes through apiSave, which drives the
+        // little status text in the header. A counter (not a boolean) so that
+        // overlapping saves only show "Saved" once the LAST one lands.
+        let pendingSaves = 0;
+        let saveStatusTimer = null;
+
+        function saveStarted() {
+            pendingSaves++;
+            const el = document.getElementById('saveStatus');
+            el.textContent = 'Saving…';
+            el.classList.add('visible');
+            clearTimeout(saveStatusTimer);
+        }
+
+        function saveFinished(ok) {
+            pendingSaves = Math.max(0, pendingSaves - 1);
+            if (pendingSaves > 0) return;
+            const el = document.getElementById('saveStatus');
+            el.textContent = ok ? 'Saved' : 'Save failed';
+            clearTimeout(saveStatusTimer);
+            saveStatusTimer = setTimeout(() => el.classList.remove('visible'), ok ? 2000 : 4000);
+        }
+
+        async function apiSave(url, options = {}) {
+            saveStarted();
+            try {
+                const res = await apiFetch(url, options);
+                saveFinished(true);
+                return res;
+            } catch (err) {
+                saveFinished(false);
+                throw err;
+            }
+        }
+
+        // --- Snackbar -----------------------------------------------------------
+        let snackbarTimer = null;
+        function showSnackbar(message, actionLabel = null, actionFn = null) {
+            const bar = document.getElementById('snackbar');
+            bar.textContent = message;
+            if (actionLabel) {
+                const btn = document.createElement('button');
+                btn.textContent = actionLabel;
+                btn.onclick = (e) => { e.stopPropagation(); hideSnackbar(); if (actionFn) actionFn(); };
+                bar.appendChild(btn);
+            }
+            bar.classList.add('show');
+            clearTimeout(snackbarTimer);
+            snackbarTimer = setTimeout(hideSnackbar, 5000);
+        }
+        function hideSnackbar() { document.getElementById('snackbar').classList.remove('show'); }
+
+        // --- Archive / restore with feedback ------------------------------------
+        async function toggleArchive(id, archived) {
+            if (editorNoteId === id) closeNoteEditor();
+            await updateNote(id, {archived});
+            if (archived) showSnackbar('Note archived', 'View archive', () => setView('archive'));
+            else showSnackbar('Note unarchived');
+        }
+
+        async function restoreNote(id) {
+            if (!(await uiConfirm('Restore this note from the trash?'))) return;
+            if (editorNoteId === id) closeNoteEditor();
+            await updateNote(id, {trashed: false});
+            showSnackbar('Note restored');
+        }
+
+        // --- Expanded note editor ------------------------------------------------
+        // Clicking a card opens it in a modal; edits save exactly like the
+        // inline card (onchange -> updateNote). In the trash it becomes a
+        // read-only preview with Restore / Delete forever.
+        let editorNoteId = null;
+
+        function openNoteEditor(id) {
+            editorNoteId = id;
+            renderNoteEditor();
+            document.getElementById('noteEditor').style.display = 'flex';
+        }
+
+        function closeNoteEditor() {
+            editorNoteId = null;
+            document.getElementById('noteEditor').style.display = 'none';
+        }
+
+        function refreshEditorIfOpen() {
+            if (editorNoteId === null) return;
+            const note = notes.find(n => n.id === editorNoteId);
+            if (!note) { closeNoteEditor(); return; }   // deleted / purged elsewhere
+            const overlay = document.getElementById('noteEditor');
+            // Re-rendering while the user is typing would eat their caret; the
+            // DOM already holds their newest text, so just refresh the counter.
+            if (overlay.contains(document.activeElement)) { updateEditorCount(); return; }
+            renderNoteEditor();
+        }
+
+        function renderNoteEditor() {
+            const note = notes.find(n => n.id === editorNoteId);
+            if (!note) return;
+            const nid = safeId(note.id);
+            const card = document.getElementById('noteEditorCard');
+            const preview = !!note.trashed;             // trash = read-only preview
+            const ro = preview ? 'readonly disabled' : '';
+            card.style.backgroundColor = `var(--note-${note.color || 'default'})`;
+
+            let html = `
+                <button class="icon-btn pin-btn ${note.pinned?'active':''}" ${preview?'disabled':''} onclick="updateNote('${nid}', {pinned: ${!note.pinned}})" title="Pin">📌</button>
+                <textarea class="title" rows="1" placeholder="Title" ${ro} oninput="autoResize(this); updateEditorCount()" onchange="updateNote('${nid}', {title: this.value})">${escapeHtml(note.title)}</textarea>
+            `;
+            if ((note.images || []).length) {
+                html += `<div class="image-preview-list">${(note.images || []).map(img => `<div class="image-preview"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}"></div>`).join('')}</div>`;
+            }
+            if (note.type === 'list') {
+                html += `<div class="list-container">`;
+                (note.items || []).forEach(item => {
+                    if (!note.showChecked && item.checked) return;
+                    const iid = safeId(item.id);
+                    html += `
+                        <div class="checklist-item ${item.checked ? 'checked' : ''}">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''} ${preview?'disabled':''} onchange="updateListItem('${nid}', '${iid}', 'checked', this.checked)">
+                            <input type="text" value="${escapeHtml(item.text)}" ${ro} oninput="updateEditorCount()" onchange="updateListItem('${nid}', '${iid}', 'text', this.value)">
+                        </div>
+                    `;
+                });
+                if (!preview) html += `<div class="add-list-item" onclick="addListItem('${nid}')"><span>+</span> List item</div>`;
+                html += `</div>`;
+            } else {
+                html += `<textarea class="auto-resize" placeholder="Empty note" ${ro} oninput="autoResize(this); updateEditorCount()" onchange="updateNote('${nid}', {body: this.value})">${escapeHtml(note.body)}</textarea>`;
+            }
+
+            html += `<div class="chips-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">`;
+            if (note.reminder) html += `<div class="label-chip" title="Reminder">🔔 ${new Date(note.reminder).toLocaleString()}</div>`;
+            (note.labels || []).forEach(lid => {
+                const l = labels.find(x => x.id === lid);
+                if (l) html += `<div class="label-chip"><span>${escapeHtml(l.name)}</span>${preview ? '' : ` <span onclick="removeLabel('${nid}', '${safeId(lid)}')">&times;</span>`}</div>`;
+            });
+            html += `</div>`;
+
+            html += `<div class="editor-meta"><span id="editorCount"></span><span title="Created: ${new Date(note.created).toLocaleString()}">Edited: ${new Date(note.updated).toLocaleString()}</span></div>`;
+
+            html += `<div class="card-toolbar">`;
+            if (preview) {
+                html += `
+                    <button class="icon-btn" title="Restore" onclick="restoreNote('${nid}')">♻️</button>
+                    <button class="icon-btn" title="Delete Forever" onclick="deleteNoteForever('${nid}')">🗑️</button>
+                `;
+            } else {
+                if (note.type === 'list') {
+                    html += `<button class="icon-btn" title="${note.showChecked ? 'Hide completed items' : 'Show completed items'}" onclick="updateNote('${nid}', {showChecked: ${!note.showChecked}})">${note.showChecked ? '🙈' : '👁️'}</button>`;
+                }
+                html += `
+                    <button class="icon-btn" title="Remind" onclick="addReminderPrompt('${nid}')">🔔</button>
+                    <div style="position: relative;">
+                        <button class="icon-btn" title="Color" onclick="togglePalette('editor-pal-${nid}')">🎨</button>
+                        <div class="color-palette" id="editor-pal-${nid}"></div>
+                    </div>
+                    <button class="icon-btn" title="Label" onclick="addLabelPrompt('${nid}')">🏷️</button>
+                    <button class="icon-btn" title="Add image" onclick="event.stopPropagation(); document.getElementById('editor-image-input').click()">🖼️</button>
+                    <button class="icon-btn" title="Archive" onclick="toggleArchive('${nid}', ${!note.archived})">📦</button>
+                    <button class="icon-btn" title="Trash" onclick="closeNoteEditor(); updateNote('${nid}', {trashed: true})">🗑️</button>
+                `;
+            }
+            html += `<span style="flex:1"></span><button class="close-btn" onclick="closeNoteEditor()">${preview ? 'Close preview' : 'Close'}</button></div>`;
+
+            card.innerHTML = html;
+            updateEditorCount();
+            setTimeout(() => {
+                card.querySelectorAll('textarea').forEach(autoResize);
+                const pal = card.querySelector(`#editor-pal-${nid}`);
+                if (pal) buildColorPalette(pal, (c) => updateNote(note.id, {color: c}));
+            }, 0);
+        }
+
+        // --- Word / character counters -------------------------------------------
+        function countText(parts) {
+            const text = parts.join(' ').trim();
+            const words = text ? text.split(/\s+/).length : 0;
+            const chars = parts.reduce((a, p) => a + (p || '').length, 0);
+            return {words, chars};
+        }
+
+        function updateEditorCount() {
+            const el = document.getElementById('editorCount');
+            if (!el || editorNoteId === null) return;
+            const card = document.getElementById('noteEditorCard');
+            const parts = [];
+            card.querySelectorAll('textarea.title, textarea.auto-resize, .list-container input[type="text"]')
+                .forEach(i => parts.push(i.value || ''));
+            const {words, chars} = countText(parts);
+            el.textContent = `${words} ${words === 1 ? 'word' : 'words'} · ${chars} ${chars === 1 ? 'character' : 'characters'}`;
+        }
+
+        function updateCreatorCount() {
+            const el = document.getElementById('creatorCount');
+            if (!el) return;
+            const parts = [titleInput.value || ''];
+            if (creatorData.type === 'text') {
+                parts.push(bodyInput.value || '');
+            } else {
+                document.querySelectorAll('#create-list-items input[type="text"]').forEach(i => parts.push(i.value || ''));
+            }
+            const {words, chars} = countText(parts);
+            el.textContent = (words || chars)
+                ? `${words} ${words === 1 ? 'word' : 'words'} · ${chars} ${chars === 1 ? 'character' : 'characters'}`
+                : '';
+        }
+        titleInput.addEventListener('input', updateCreatorCount);
+        bodyInput.addEventListener('input', updateCreatorCount);
+
+        // Close the expanded editor with Escape or a backdrop click
+        document.addEventListener('keydown', (e) => {
+            if (e.key !== 'Escape') return;
+            const modal = document.getElementById('uiModal');
+            if (modal && modal.style.display !== 'none') return;   // dialog first
+            if (editorNoteId !== null) closeNoteEditor();
+        });
+        document.getElementById('noteEditor').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeNoteEditor();
+        });
+
+        // --- Initialization ---
+        async function loadState() {
+            try {
+                const res = await fetch('/api/notes');
+                const data = await res.json();
+                notes = data.notes || [];
+                labels = data.labels || [];
+                notes.sort((a, b) => b.order - a.order);
+                renderApp();
+            } catch (err) {
+                console.error("Load failed", err);
+            }
+            try {
+                const statusRes = await fetch('/api/server/status');
+                const statusData = await statusRes.json();
+                serverEnabled = !!statusData.enabled;
+                updateServerToggle();
+            } catch (err) {
+                console.error("Server status failed", err);
+            }
+        }
+
+        async function toggleServerFromUi() {
+            try {
+                const res = await fetch('/api/server/toggle', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({enabled: !serverEnabled})
+                });
+                const data = await res.json();
+                serverEnabled = !!data.enabled;
+                updateServerToggle();
+            } catch (err) {
+                console.error('Server toggle failed', err);
+            }
+        }
+
+        function updateServerToggle() {
+            const controls = document.getElementById('serverControls');
+            const btn = document.getElementById('serverToggle');
+            const label = document.getElementById('serverStatus');
+            if (!controls || !btn || !label) return;
+            const isDesktop = window.location.search.includes('desktop=1');
+            controls.style.display = isDesktop ? 'flex' : 'none';
+            btn.textContent = serverEnabled ? 'ON' : 'OFF';
+            btn.style.background = serverEnabled ? '#1b4b01' : '#b00020';
+            label.textContent = serverEnabled ? 'Server on' : 'Server off';
+        }
+
+        function renderApp() {
+            renderSidebar();
+            renderGrids();
+            buildColorPalette(creatorPalette, (c) => { 
+                creatorData.color = c; 
+                creator.style.backgroundColor = `var(--note-${c})`;
+                creatorPalette.classList.remove('show');
+            });
+        }
+
+        // --- Sidebar ---
+        function setView(view) {
+            currentView = view;
+            document.getElementById('creatorWrapper').style.display = (view === 'trash' || view === 'archive') ? 'none' : 'block';
+            document.getElementById('trashBanner').style.display = view === 'trash' ? 'flex' : 'none';
+            renderApp();
+        }
+
+        function renderSidebar() {
+            let html = `
+                <div class="nav-item ${currentView==='notes'?'active':''}" tabindex="0" role="button" onclick="setView('notes')">💡 Notes</div>
+                <div class="nav-item ${currentView==='reminders'?'active':''}" tabindex="0" role="button" onclick="setView('reminders')">🔔 Reminders</div>
+                <hr style="border-color: var(--border-color); margin: 10px 0;">
+            `;
+            labels.forEach(l => {
+                const isActive = currentView === `label:${l.id}` ? 'active' : '';
+                const lid = safeId(l.id);
+                html += `
+                    <div class="nav-item ${isActive}" tabindex="0" role="button" onclick="setView('label:${lid}')">
+                        <span>🏷️ ${escapeHtml(l.name)}</span>
+                        <div class="action-btns">
+                            <span class="rename-label-btn" title="Rename label" onclick="event.stopPropagation(); renameLabel('${lid}')">✏️</span>
+                            <span class="delete-label-btn" title="Delete label" onclick="event.stopPropagation(); deleteLabel('${lid}')">&times;</span>
+                        </div>
+                    </div>
+                `;
+            });
+            html += `
+                <div class="nav-item" tabindex="0" role="button" onclick="createNewLabel()">➕ Create new label</div>
+                <hr style="border-color: var(--border-color); margin: 10px 0;">
+                <div class="nav-item ${currentView==='archive'?'active':''}" tabindex="0" role="button" onclick="setView('archive')">📦 Archive</div>
+                <div class="nav-item ${currentView==='trash'?'active':''}" tabindex="0" role="button" onclick="setView('trash')">🗑️ Trash</div>
+            `;
+            sidebarEl.innerHTML = html;
+        }
+
+        async function createNewLabel() {
+            const name = await uiPrompt("Enter new label name:");
+            if (!name || !name.trim()) return;
+            try {
+                const res = await apiSave('/api/labels', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: name.trim()})
+                });
+                const lb = await res.json();
+                labels.push(lb);
+                renderSidebar();
+            } catch (err) {
+                console.error("Failed to create label", err);
+                await uiAlert('Creating the label failed.');
+            }
+        }
+
+        async function deleteLabel(labelId) {
+            const l = labels.find(x => x.id === labelId);
+            if (!l) return;
+
+            if (await uiConfirm(`Delete the label "${l.name}"? This will remove it from all notes.`)) {
+                try {
+                    await apiSave(`/api/labels/${safeId(labelId)}`, { method: 'DELETE' });
+                    labels = labels.filter(x => x.id !== labelId);
+                    notes.forEach(n => {
+                        if (n.labels) n.labels = n.labels.filter(id => id !== labelId);
+                    });
+                    if (currentView === `label:${labelId}`) currentView = 'notes';
+                    renderApp();
+                } catch (err) {
+                    console.error("Failed to delete label", err);
+                    await uiAlert('Deleting the label failed.');
+                }
+            }
+        }
+
+        async function renameLabel(labelId) {
+            const l = labels.find(x => x.id === labelId);
+            if (!l) return;
+            const newName = await uiPrompt("Enter new name for label:", l.name);
+            if (!newName || !newName.trim() || newName.trim() === l.name) return;
+
+            try {
+                const res = await apiSave(`/api/labels/${safeId(labelId)}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: newName.trim()})
+                });
+                const updatedLabel = await res.json();
+                const idx = labels.findIndex(x => x.id === labelId);
+                if (idx > -1) labels[idx] = updatedLabel;
+                renderApp();
+            } catch (err) {
+                console.error("Failed to rename label", err);
+                await uiAlert('Renaming the label failed.');
+            }
+        }
+         
+        // --- Creator Logic ---
+        function activateCreator() { creator.classList.add('active'); }
+
+        function renderCreatorImages() {
+            const preview = document.getElementById('creator-image-preview');
+            preview.innerHTML = '';
+            creatorData.images.forEach((img, idx) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'image-preview';
+                wrapper.innerHTML = `
+                    <img src="${escapeHtml(img.dataUrl)}" alt="${escapeHtml(img.name || 'image')}">
+                    <button class="remove-image" onclick="removeCreatorImage(${idx})" title="Remove image">×</button>
+                `;
+                preview.appendChild(wrapper);
+            });
+        }
+
+        function removeCreatorImage(index) {
+            creatorData.images.splice(index, 1);
+            renderCreatorImages();
+        }
+
+        async function readFileAsDataUrl(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function handleImageSelection(files, isCreator = false, noteId = null) {
+            if (!files || files.length === 0) return;
+            for (const file of files) {
+                if (!file.type.startsWith('image/')) continue;
+                const dataUrl = await readFileAsDataUrl(file);
+                const payload = { id: 'img_' + Date.now() + Math.random().toString(16).slice(2), name: file.name, mimeType: file.type, size: file.size, dataUrl };
+                if (isCreator) {
+                    creatorData.images.push(payload);
+                    renderCreatorImages();
+                    activateCreator();
+                } else if (noteId) {
+                    const note = notes.find(n => n.id === noteId);
+                    if (note) {
+                        note.images = [...(note.images || []), payload];
+                        await updateNote(noteId, {images: note.images});
+                    }
+                }
+            }
+            if (isCreator) {
+                document.getElementById('creator-image-input').value = '';
+            } else if (noteId) {
+                const input = document.getElementById(`img-input-${safeId(noteId)}`);
+                if (input) input.value = '';
+                const editorInput = document.getElementById('editor-image-input');
+                if (editorInput) editorInput.value = '';
+            }
+        }
+
+        function handleImageDrop(event, isCreator = false, noteId = null) {
+            event.preventDefault();
+            event.stopPropagation();
+            const zone = event.currentTarget;
+            zone.classList.remove('dragover');
+            const files = event.dataTransfer?.files;
+            if (files && files.length) {
+                handleImageSelection(files, isCreator, noteId);
+            }
+        }
+
+        document.addEventListener('paste', async (event) => {
+            const target = event.target;
+            if (!target || !creator.contains(target) && !target.closest('.note-card')) return;
+            const items = event.clipboardData && event.clipboardData.items ? event.clipboardData.items : [];
+            const imageItems = Array.from(items).filter(item => item.type.startsWith('image/'));
+            if (imageItems.length === 0) return;
+            event.preventDefault();
+            const files = imageItems.map(item => item.getAsFile()).filter(Boolean);
+            if (creator.contains(target) || target.closest('#creator')) {
+                await handleImageSelection(files, true);
+            } else {
+                const card = target.closest('.note-card');
+                if (card) {
+                    const noteId = card.dataset.noteId;
+                    await handleImageSelection(files, false, noteId);
+                }
+            }
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#uiModal') || e.target.closest('#noteEditor') || e.target.closest('#snackbar')) return;
+            if (!creator.contains(e.target) && creator.classList.contains('active') && !e.target.closest('.color-palette')) {
+                submitNote();
+            }
+        });
+
+        function toggleCreatorList() {
+            creatorData.type = creatorData.type === 'text' ? 'list' : 'text';
+            document.getElementById('create-body-container').style.display = creatorData.type === 'text' ? 'block' : 'none';
+            document.getElementById('create-list-container').style.display = creatorData.type === 'list' ? 'block' : 'none';
+            if (creatorData.type === 'list' && creatorData.items.length === 0) addCreatorListItem();
+            updateCreatorCount();
+        }
+
+        function addCreatorListItem() {
+            const id = 'temp_' + Date.now();
+            creatorData.items.push({id, text: '', checked: false});
+            renderCreatorList();
+        }
+
+        function renderCreatorList() {
+            const container = document.getElementById('create-list-items');
+            container.innerHTML = creatorData.items.map((item, idx) => `
+                    <div class="checklist-item">
+                        <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="creatorData.items[${idx}].checked = this.checked">
+                        <input type="text" value="${escapeHtml(item.text)}" oninput="creatorData.items[${idx}].text = this.value; updateCreatorCount()" placeholder="List item">
+                    </div>
+                `).join('');
+            updateCreatorCount();
+        }
+
+        async function submitNote() {
+            const title = titleInput.value.trim();
+            const body = bodyInput.value.trim();
+            const hasItems = creatorData.items.some(i => i.text.trim() !== '');
+
+            if (title || body || hasItems || creatorData.images.length) {
+                const payload = {
+                    title, body: creatorData.type==='text'?body:'', 
+                    type: creatorData.type, color: creatorData.color, 
+                    pinned: creatorData.pinned, labels: creatorData.labels,
+                    reminder: creatorData.reminder,
+                    items: creatorData.type==='list' ? creatorData.items.filter(i => i.text.trim() !== '') : [],
+                    images: creatorData.images
+                };
+
+                try {
+                    const res = await apiSave('/api/notes', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const newNote = await res.json();
+                    notes.unshift(newNote);
+                    renderGrids();
+                } catch (err) {
+                    console.error("Failed to save note", err);
+                    await uiAlert('Saving the note failed — your draft was kept.');
+                    return;   // do NOT reset the creator: the text would be lost
+                }
+            }
+
+            // Reset
+            titleInput.value = ''; bodyInput.value = '';
+            creatorData = { color: 'default', type: 'text', pinned: false, items: [], labels: [], reminder: null, images: [] };
+            creator.className = 'note-creator';
+            creator.style.backgroundColor = 'var(--note-default)';
+            document.getElementById('create-body-container').style.display = 'block';
+            document.getElementById('create-list-container').style.display = 'none';
+            document.getElementById('creator-labels-display').innerHTML = '';
+            document.getElementById('creator-image-preview').innerHTML = '';
+            document.querySelector('.pin-btn-creator').classList.remove('active');
+            updateCreatorCount();
+        }
+
+        // --- Grids & Note Cards ---
+        function renderGrids() {
+            const search = document.getElementById('searchInput').value.toLowerCase().trim();
+            const labelId = currentView.startsWith('label:') ? currentView.split(':')[1] : null;
+            
+            let filtered = notes.filter(n => {
+                if (n.trashed) return currentView === 'trash';
+                if (n.archived) return currentView === 'archive';
+                if (labelId) {
+                    const hasLabel = Array.isArray(n.labels) && n.labels.includes(labelId);
+                    if (!hasLabel) return false;
+                }
+                if (currentView === 'reminders') return !!n.reminder;
+                if (currentView === 'archive') return false;
+                if (currentView === 'trash') return false;
+                if (search) {
+                    const inItems = (n.items || []).some(i => (i.text || '').toLowerCase().includes(search));
+                    return (n.title || '').toLowerCase().includes(search)
+                        || (n.body || '').toLowerCase().includes(search)
+                        || inItems;
+                }
+                return true;
+            });
+
+            const pinned = filtered.filter(n => n.pinned);
+            const others = filtered.filter(n => !n.pinned);
+
+            const gridPinned = document.getElementById('grid-pinned');
+            const gridOthers = document.getElementById('grid-others');
+            
+            gridPinned.innerHTML = ''; gridOthers.innerHTML = '';
+
+            if (pinned.length > 0) {
+                document.getElementById('pinnedContainer').style.display = 'block';
+                document.getElementById('othersTitle').style.display = 'block';
+                pinned.forEach(n => gridPinned.appendChild(createNoteElement(n)));
+            } else {
+                document.getElementById('pinnedContainer').style.display = 'none';
+                document.getElementById('othersTitle').style.display = 'none';
+            }
+
+            others.forEach(n => gridOthers.appendChild(createNoteElement(n)));
+            
+            // Re-apply masonry-like resizing
+            document.querySelectorAll('textarea.auto-resize').forEach(autoResize);
+            refreshEditorIfOpen();   // keep the expanded editor in sync
+        }
+
+        async function handleDrop(event, targetNoteId) {
+            event.preventDefault();
+            const draggedId = event.dataTransfer?.getData('text/plain');
+            if (!draggedId || draggedId === targetNoteId) return;
+            const fromIndex = notes.findIndex(n => n.id === draggedId);
+            const toIndex = notes.findIndex(n => n.id === targetNoteId);
+            if (fromIndex < 0 || toIndex < 0) return;
+            const [moved] = notes.splice(fromIndex, 1);
+            notes.splice(toIndex, 0, moved);
+            notes.forEach((note, idx) => {
+                note.order = notes.length - idx;
+            });
+            renderGrids();
+            try {
+                await apiSave('/api/reorder', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ids: notes.map(n => n.id)})
+                });
+            } catch (err) {
+                console.error("Failed to save the new order", err);
+                await uiAlert('Saving the new order failed — reloading the latest saved state.');
+                loadState();
+            }
+        }
+
+        function createNoteElement(note) {
+            const nid = safeId(note.id);   // used in every inline handler below
+            const card = document.createElement('div');
+            card.className = 'note-card';
+            card.style.backgroundColor = `var(--note-${note.color || 'default'})`;
+            card.draggable = true;
+            card.ondragstart = (e) => { e.dataTransfer.setData('text/plain', note.id); card.classList.add('sortable-ghost'); };
+            card.ondragend = () => card.classList.remove('sortable-ghost');
+            card.ondragover = (e) => e.preventDefault();
+            card.ondrop = (e) => handleDrop(e, note.id);
+            // Click anywhere that isn't a control -> open the expanded editor
+            // (in the trash this becomes a read-only restore preview).
+            card.onclick = (e) => {
+                if (e.target.closest('[onclick], button, input, textarea, .color-palette, .add-list-item')) return;
+                openNoteEditor(note.id);
+            };
+
+            let innerHTML = `
+                <button class="icon-btn pin-btn ${note.pinned?'active':''}" onclick="updateNote('${nid}', {pinned: ${!note.pinned}})" title="Pin">📌</button>
+                <textarea class="title" rows="1" placeholder="Title" oninput="autoResize(this)" onchange="updateNote('${nid}', {title: this.value})">${escapeHtml(note.title)}</textarea>
+            `;
+
+            if ((note.images || []).length) {
+                innerHTML += `<div class="image-preview-list">${(note.images || []).map(img => `<div class="image-preview"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}"></div>`).join('')}</div>`;
+            }
+
+            // List handling: Filter out checked items if showChecked is false
+            if (note.type === 'list') {
+                innerHTML += `<div class="list-container">`;
+                (note.items || []).forEach(item => {
+                    if (!note.showChecked && item.checked) return; // Skip rendering hidden completed items
+                    const iid = safeId(item.id);
+                    innerHTML += `
+                        <div class="checklist-item ${item.checked ? 'checked' : ''}">
+                            <input type="checkbox" ${item.checked ? 'checked' : ''} onchange="updateListItem('${nid}', '${iid}', 'checked', this.checked)">
+                            <input type="text" value="${escapeHtml(item.text)}" onchange="updateListItem('${nid}', '${iid}', 'text', this.value)">
+                        </div>
+                    `;
+                });
+                innerHTML += `<div class="add-list-item" onclick="addListItem('${nid}')"><span>+</span> List item</div></div>`;
+            } else {
+                innerHTML += `<textarea class="auto-resize" placeholder="Empty note" oninput="autoResize(this)" onchange="updateNote('${nid}', {body: this.value})">${escapeHtml(note.body)}</textarea>`;
+            }
+
+            // Labels & Reminders Display
+            innerHTML += `<div class="chips-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">`;
+            if (note.reminder) innerHTML += `<div class="label-chip" title="Reminder">🔔 ${new Date(note.reminder).toLocaleString()}</div>`;
+            (note.labels || []).forEach(lid => {
+                const l = labels.find(x => x.id === lid);
+                if (l) innerHTML += `<div class="label-chip"><span>${escapeHtml(l.name)}</span> <span onclick="removeLabel('${nid}', '${safeId(lid)}')">&times;</span></div>`;
+            });
+            innerHTML += `</div>`;
+
+            // Timestamps Feature
+            const createdDate = new Date(note.created).toLocaleString();
+            const updatedDate = new Date(note.updated).toLocaleString();
+            innerHTML += `<div style="font-size: 0.7rem; color: var(--text-muted); text-align: right; margin-top: 10px;" title="Created: ${createdDate}">Edited: ${updatedDate}</div>`;
+
+            // Toolbar
+            innerHTML += `<div class="card-toolbar">`;
+            if (currentView === 'trash') {
+                innerHTML += `
+                    <button class="icon-btn" title="Restore" onclick="restoreNote('${nid}')">♻️</button>
+                    <button class="icon-btn" title="Delete Forever" onclick="deleteNoteForever('${nid}')">🗑️</button>
+                `;
+            } else {
+                // Show/Hide Checked Items Toggle (Only for lists)
+                if (note.type === 'list') {
+                    innerHTML += `<button class="icon-btn" title="${note.showChecked ? 'Hide completed items' : 'Show completed items'}" onclick="updateNote('${nid}', {showChecked: ${!note.showChecked}})">${note.showChecked ? '🙈' : '👁️'}</button>`;
+                }
+                
+                innerHTML += `
+                    <button class="icon-btn" title="Remind" onclick="addReminderPrompt('${nid}')">🔔</button>
+                    <div style="position: relative;">
+                        <button class="icon-btn" title="Color" onclick="togglePalette('pal-${nid}')">🎨</button>
+                        <div class="color-palette" id="pal-${nid}"></div>
+                    </div>
+                    <button class="icon-btn" title="Label" onclick="addLabelPrompt('${nid}')">🏷️</button>
+                    <button class="icon-btn" title="Add image" onclick="event.stopPropagation(); document.getElementById('img-input-${nid}').click()">🖼️</button>
+                    <button class="icon-btn" title="Archive" onclick="toggleArchive('${nid}', ${!note.archived})">📦</button>
+                    <button class="icon-btn" title="Trash" onclick="updateNote('${nid}', {trashed: true})">🗑️</button>
+                `;
+            }
+            innerHTML += `</div>`;
+
+            card.innerHTML = innerHTML;
+            card.dataset.noteId = note.id;
+            card.insertAdjacentHTML('beforeend', `<input id="img-input-${nid}" type="file" accept="image/*" multiple style="display:none;" onchange="handleImageSelection(this.files, false, '${nid}')">`);
+
+            if (currentView !== 'trash') {
+                setTimeout(() => {
+                    const pal = card.querySelector(`#pal-${nid}`);
+                    if(pal) buildColorPalette(pal, (c) => updateNote(note.id, {color: c}));
+                }, 0);
+            }
+
+            return card;
+        }
+
+        // --- Note Actions ---
+        async function updateNote(id, patch) {
+            const noteIndex = notes.findIndex(n => n.id === id);
+            if (noteIndex > -1) {
+                notes[noteIndex] = { ...notes[noteIndex], ...patch };
+                renderGrids();
+            }
+            try {
+                await apiSave(`/api/notes/${safeId(id)}`, {
+                    method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(patch)
+                });
+            } catch (err) {
+                // The optimistic update above no longer matches the server;
+                // roll back to the saved state so nothing looks saved that isn't.
+                console.error("Failed to save note", err);
+                await uiAlert('Saving the note failed — reloading the latest saved state.');
+                loadState();
+            }
+        }
+
+        async function updateListItem(noteId, itemId, field, value) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            const item = (note.items || []).find(i => i.id === itemId);
+            if (!item) return;
+            item[field] = value;
+            await updateNote(noteId, {items: note.items});
+        }
+
+        async function addListItem(noteId) {
+            const note = notes.find(n => n.id === noteId);
+            if (!note) return;
+            note.items = note.items || [];
+            note.items.push({id: 'item_' + Date.now(), text: '', checked: false});
+            await updateNote(noteId, {items: note.items});
+        }
+
+        async function deleteNoteForever(id) {
+            if (!(await uiConfirm('Delete this note forever? This cannot be undone.'))) return;
+            notes = notes.filter(n => n.id !== id);
+            renderGrids();
+            try {
+                await apiSave(`/api/notes/${safeId(id)}`, { method: 'DELETE' });
+            } catch (err) {
+                console.error("Failed to delete note", err);
+                await uiAlert('Deleting the note failed — reloading the latest saved state.');
+                loadState();
+            }
+        }
+
+        async function emptyTrash() {
+            if (!(await uiConfirm('Empty the trash? All trashed notes will be deleted forever.'))) return;
+            notes = notes.filter(n => !n.trashed);
+            renderGrids();
+            try {
+                await apiSave('/api/trash/empty', { method: 'POST' });
+            } catch (err) {
+                console.error("Failed to empty trash", err);
+                await uiAlert('Emptying the trash failed — reloading the latest saved state.');
+                loadState();
+            }
+        }
+
+        async function addLabelPrompt(noteId, isCreator=false) {
+            const names = labels.map(l => l.name).join(', ');
+            const input = await uiPrompt(`Enter label name to add${names ? ` (${names})` : ''}:`);
+            if (!input || !input.trim()) return;
+            const trimmed = input.trim();
+            const lb = labels.find(l => l.name.toLowerCase() === trimmed.toLowerCase());
+
+            const applyLabel = (labelId) => {
+                if(isCreator) {
+                    if(!creatorData.labels.includes(labelId)) creatorData.labels.push(labelId);
+                    renderCreatorLabels();
+                } else {
+                    const n = notes.find(n => n.id === noteId);
+                    if(n && !(n.labels || []).includes(labelId)) updateNote(noteId, {labels: [...(n.labels || []), labelId]});
+                }
+            };
+
+            if (lb) { applyLabel(lb.id); return; }
+            try {
+                const res = await apiSave('/api/labels', {method: 'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: trimmed})});
+                const newLb = await res.json();
+                labels.push(newLb);
+                renderSidebar();
+                applyLabel(newLb.id);
+            } catch (err) {
+                console.error("Failed to create label", err);
+                await uiAlert('Creating the label failed.');
+            }
+        }
+
+        function renderCreatorLabels() {
+            const el = document.getElementById('creator-labels-display');
+            el.innerHTML = creatorData.labels.map(lid => {
+                const l = labels.find(x => x.id === lid);
+                return l ? `<div class="label-chip">${escapeHtml(l.name)}</div>` : '';
+            }).join('');
+        }
+
+        function removeLabel(noteId, labelId) {
+            const n = notes.find(n => n.id === noteId);
+            if (!n) return;
+            updateNote(noteId, {labels: (n.labels || []).filter(l => l !== labelId)});
+        }
+
+        function formatReminderForInput(d) {
+            const p = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+        }
+
+        async function addReminderPrompt(noteId, isCreator=false) {
+            const existing = isCreator
+                ? creatorData.reminder
+                : (notes.find(n => n.id === noteId) || {}).reminder;
+            const def = existing ? formatReminderForInput(new Date(existing)) : '';
+            const dateStr = await uiPrompt(
+                'Remind me at (YYYY-MM-DD HH:MM):' + (existing ? '\nLeave empty to remove the reminder.' : ''),
+                def
+            );
+            if (dateStr === null) return;                 // cancelled
+            const trimmed = dateStr.trim();
+            if (!trimmed) {                                // empty -> clear it
+                if (existing) {
+                    if (isCreator) creatorData.reminder = null;
+                    else updateNote(noteId, {reminder: null});
+                }
+                return;
+            }
+            const d = new Date(trimmed.replace(' ', 'T')); // parses reliably as local time
+            if (isNaN(d)) { await uiAlert("Couldn't parse that date — use YYYY-MM-DD HH:MM"); return; }
+            const iso = d.toISOString();
+            if(isCreator) creatorData.reminder = iso;
+            else updateNote(noteId, {reminder: iso});
+        }
+
+        // --- Helpers ---
+        function autoResize(el) {
+            el.style.height = 'auto';
+            el.style.height = el.scrollHeight + 'px';
+        }
+
+        function togglePalette(id) {
+            document.querySelectorAll('.color-palette').forEach(p => { if(p.id !== id) p.classList.remove('show'); });
+            document.getElementById(id).classList.toggle('show');
+        }
+
+        function buildColorPalette(container, callback) {
+            container.innerHTML = colors.map(c => 
+                `<div class="color-dot" style="background-color: var(--note-${c}); border-color: ${c==='default'?'var(--border-color)':'transparent'}" onclick="event.stopPropagation();"></div>`
+            ).join('');
+            container.querySelectorAll('.color-dot').forEach((dot, i) => {
+                dot.onclick = (e) => { e.stopPropagation(); callback(colors[i]); };
+            });
+        }
+
+        function escapeHtml(unsafe) {
+            return (unsafe||'').toString().replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function getImageUrl(note, img) {
+            if (!img) return '';
+            if (img.file) {
+                const fileName = String(img.file).split('/').pop();
+                return `/api/notes/${note.id}/images/${encodeURIComponent(fileName)}`;
+            }
+            return img.dataUrl || img.src || '';
+        }
+
+        // Close color palettes when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.icon-btn') && !e.target.closest('.color-palette')) {
+                document.querySelectorAll('.color-palette').forEach(p => p.classList.remove('show'));
+            }
+        });
+
+        // Boot
+        loadState();
+
+        // --- Real-Time Syncing ---
+        const evtSource = new EventSource('/api/events');
+        let refreshPending = false;   // at most ONE deferred refresh at a time
+
+        function isEditingNow() {
+            const el = document.activeElement;
+            return !!(el && (el.closest('.note-card') || el.closest('.note-creator') || el.closest('.note-editor')));
+        }
+
+        evtSource.onmessage = function(e) {
+            if (e.data !== 'update') return;
+            if (!isEditingNow()) {
+                // Safe to update immediately
+                loadState();
+                return;
+            }
+            // User is typing! Wait until they click away to refresh. Without
+            // the refreshPending guard, every SSE event while typing stacked
+            // another permanent focusout listener on the document.
+            if (refreshPending) return;
+            refreshPending = true;
+            document.addEventListener('focusout', function queueRefresh() {
+                setTimeout(() => {
+                    if (!isEditingNow()) {
+                        document.removeEventListener('focusout', queueRefresh);
+                        refreshPending = false;
+                        loadState();
+                    }
+                }, 50);
+            });
+        };
+    </script>
+</body>
+</html>
