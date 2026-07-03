@@ -1,7 +1,5 @@
 **Igi-Notes**  
-A personal, single-file Google Keep clone. No database, no external  
-   
- dependencies, no accounts — your notes are just folders sitting next to the  
+A personal, single-file Google Keep clone. No database, no accounts — your notes are just folders sitting next to the  
    
  script (or the app, if you build one).  
 Keepnotes/  
