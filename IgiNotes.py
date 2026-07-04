@@ -72,6 +72,7 @@ import platform
 import re
 import secrets
 import shutil
+import socket
 import subprocess
 import sys
 import threading
@@ -89,26 +90,44 @@ try:
 except Exception:  # pragma: no cover - pywebview may be missing
     webview = None
 
-try:
-    from PyQt5.QtCore import QUrl  # type: ignore[import-not-found]
-    from PyQt5.QtCore import Qt as _QtCoreQt  # type: ignore[import-not-found]
-    from PyQt5.QtGui import QColor  # type: ignore[import-not-found]
-    from PyQt5.QtWidgets import QApplication, QMainWindow  # type: ignore[import-not-found]
-    from PyQt5.QtWebEngineWidgets import QWebEngineView  # type: ignore[import-not-found]
-except Exception:  # pragma: no cover - PyQt5 may be missing
-    QApplication = None
-    QMainWindow = None
-    QUrl = None
-    _QtCoreQt = None
-    QColor = None
-    QWebEngineView = None
+QApplication = None
+QMainWindow = None
+QUrl = None
+_QtCoreQt = None
+QColor = None
+QWebEngineView = None
+
+
+def _import_qt():
+    """(Re)try importing PyQt5. Returns True when the window stack is usable.
+
+    A plain module-level import would only run once; this is a function so
+    the desktop launcher can retry after offering to install the packages
+    (see _linux_install_gui_deps)."""
+    global QApplication, QMainWindow, QUrl, _QtCoreQt, QColor, QWebEngineView
+    if QApplication is not None and QWebEngineView is not None:
+        return True
+    try:
+        from PyQt5.QtCore import QUrl as _QUrl  # type: ignore[import-not-found]
+        from PyQt5.QtCore import Qt as _Qt  # type: ignore[import-not-found]
+        from PyQt5.QtGui import QColor as _QColor  # type: ignore[import-not-found]
+        from PyQt5.QtWidgets import QApplication as _QApp, QMainWindow as _QMain  # type: ignore[import-not-found]
+        from PyQt5.QtWebEngineWidgets import QWebEngineView as _QWeb  # type: ignore[import-not-found]
+    except Exception:  # pragma: no cover - PyQt5 may be missing
+        return False
+    QApplication, QMainWindow, QUrl = _QApp, _QMain, _QUrl
+    _QtCoreQt, QColor, QWebEngineView = _Qt, _QColor, _QWeb
+    return True
+
+
+_import_qt()
 
 # --- configuration -----------------------------------------------------------
 
 PASSWORD = None          # set to a string to require a login from other devices
 BASE_PORT = 7743         # default port; NOT 8080 / 8501 on purpose
 MAX_PORT_TRIES = 100     # 7743..7842
-TRASH_DAYS = 7           # auto-purge trashed notes after this many days
+TRASH_DAYS = 30           # auto-purge trashed notes after this many days
 MAX_BODY_BYTES = 64 * 1024 * 1024   # request body cap (images travel as base64)
 
 _FILE = os.path.abspath(__file__)
@@ -138,6 +157,12 @@ def _base_dir():
         if (len(parts) >= 3 and parts[-1] == "MacOS"
                 and parts[-2] == "Contents" and parts[-3].endswith(".app")):
             return os.path.dirname(os.path.dirname(os.path.dirname(exe_dir)))
+        # onedir bundle (the Linux build): the binary sits inside an app
+        # folder next to _internal/. Keep the notes OUTSIDE that folder --
+        # upgrading means replacing the folder, which must never take the
+        # notes with it.
+        if os.path.isdir(os.path.join(exe_dir, "_internal")):
+            return os.path.dirname(exe_dir)
         return exe_dir
     return os.path.dirname(_FILE)
 
@@ -152,6 +177,97 @@ DIR_TRASH     = os.path.join(BASE_DIR, "Trash")
 DIR_REMINDERS = os.path.join(BASE_DIR, "Reminders")
 CATEGORY_DIRS = (DIR_ACTIVE, DIR_ARCHIVE, DIR_TRASH)
 LABELS_FILE   = os.path.join(BASE_DIR, "labels.json")
+SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
+
+# Runtime-configurable settings (Settings menu in the app). Persisted to
+# settings.json next to the notes. Server-side values can only be CHANGED
+# from 127.0.0.1 (the desktop window), so a device on the network can never
+# reconfigure or lock out the server.
+SETTINGS = {
+    "trash_days": 30,        # auto-purge trashed notes after this many days
+    "max_connections": 20,   # concurrent remote connections (0 = unlimited)
+    "blacklist": [],         # IPs always rejected
+    "whitelist": [],         # if non-empty: ONLY these IPs (+ localhost) allowed
+}
+
+def sanitize_settings(data):
+    """Validated subset of `data` in SETTINGS shape. Unknown keys dropped."""
+    out = {}
+    if not isinstance(data, dict):
+        return out
+    if "trash_days" in data:
+        try:
+            out["trash_days"] = max(1, min(3650, int(data["trash_days"])))
+        except (TypeError, ValueError):
+            pass
+    if "max_connections" in data:
+        try:
+            out["max_connections"] = max(0, min(1000, int(data["max_connections"])))
+        except (TypeError, ValueError):
+            pass
+    for key in ("blacklist", "whitelist"):
+        if key in data and isinstance(data[key], list):
+            out[key] = [str(x).strip() for x in data[key] if str(x).strip()][:200]
+    return out
+
+def load_settings():
+    if not os.path.exists(SETTINGS_FILE):
+        return
+    try:
+        with open(SETTINGS_FILE, "r", encoding="utf-8") as f:
+            SETTINGS.update(sanitize_settings(json.load(f)))
+    except Exception as e:
+        say(f"[warn] could not read settings.json ({e}); using defaults")
+
+def save_settings():
+    try:
+        _write_json(SETTINGS_FILE, SETTINGS)
+    except Exception as e:
+        say(f"[error] could not write settings.json: {e}")
+
+
+def _lan_ips():
+    """Best-effort list of this machine's non-loopback IPv4 addresses.
+
+    The UDP "connect" trick never sends a packet -- it only asks the OS
+    which interface it WOULD route through, which is exactly the address
+    other devices on the network should use."""
+    ips = []
+    try:
+        probe = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            probe.connect(("8.8.8.8", 80))       # no traffic is generated
+            ip = probe.getsockname()[0]
+            if not ip.startswith("127."):
+                ips.append(ip)
+        finally:
+            probe.close()
+    except OSError:
+        pass
+    try:                                          # extra interfaces, if any
+        for info in socket.getaddrinfo(socket.gethostname(), None,
+                                       socket.AF_INET):
+            ip = info[4][0]
+            if not ip.startswith("127.") and ip not in ips:
+                ips.append(ip)
+    except OSError:
+        pass
+    return ips
+
+
+def server_addresses():
+    """URLs the app is reachable at right now, as http://ip:port.
+
+    Computed fresh on every call so it follows network changes (new Wi-Fi,
+    VPN up/down). While the server toggle is OFF the socket is re-bound to
+    loopback only, so the LAN addresses are deliberately left out."""
+    if SERVER_PORT is None:
+        return []
+    urls = [f"http://127.0.0.1:{SERVER_PORT}"]
+    if SERVER_ENABLED:
+        urls += [f"http://{ip}:{SERVER_PORT}" for ip in _lan_ips()]
+    return urls
+SETTINGS_FILE = os.path.join(BASE_DIR, "settings.json")
 NOTE_FILE     = "note.json"      # the file inside every note folder
 
 
@@ -411,6 +527,7 @@ def persist_note_images(note, note_dir):
         with open(os.path.join(images_dir, filename), "wb") as handle:
             handle.write(data)
         persisted.append({
+            **{k: v for k, v in img.items() if k not in ("dataUrl", "src")},
             "id": str(img.get("id") or new_id()),
             "name": str(img.get("name") or "image"),
             "mimeType": mime_type,
@@ -438,6 +555,7 @@ def ensure_server_started():
             return SERVER_PORT
         if not STATE_LOADED:
             load_state()
+            load_settings()
         # Prefer the port we already used (the UI is connected to it).
         ports = ([SERVER_PORT] if SERVER_PORT else []) + \
                 [p for p in range(BASE_PORT, BASE_PORT + MAX_PORT_TRIES)
@@ -632,6 +750,49 @@ def sanitize_items(items):
     return out
 
 
+def _sanitize_image_layout(img):
+    """Validate the display fields the layout editor stores on an image.
+
+    Everything is normalised to safe enums / clamped numbers so nothing a
+    client sends here can break out of the HTML the UI builds from it."""
+    def num(value, lo, hi, default=0):
+        try:
+            return max(lo, min(hi, int(float(value))))
+        except Exception:
+            return default
+
+    layout = str(img.get("layout") or "row")
+    if layout not in ("row", "wrap", "overlay"):
+        layout = "row"
+    side = str(img.get("side") or "left")
+    if side not in ("left", "right"):
+        side = "left"
+    place = str(img.get("place") or "above")
+    if place not in ("above", "below"):
+        place = "above"
+
+    crop_in = img.get("crop") if isinstance(img.get("crop"), dict) else {}
+    crop = {
+        "x": num(crop_in.get("x"), 0, 99, 0),
+        "y": num(crop_in.get("y"), 0, 99, 0),
+        "w": num(crop_in.get("w"), 1, 100, 100),
+        "h": num(crop_in.get("h"), 1, 100, 100),
+    }
+    crop["w"] = min(crop["w"], 100 - crop["x"])
+    crop["h"] = min(crop["h"], 100 - crop["y"])
+
+    return {
+        "layout": layout,
+        "side": side,                                   # wrap: float side
+        "place": place,                                 # row: above/below text
+        "width": num(img.get("width"), 0, 4000, 0),     # 0 = default size
+        "x": num(img.get("x"), 0, 10000, 0),            # overlay position
+        "y": num(img.get("y"), 0, 20000, 0),
+        "yOffset": num(img.get("yOffset"), 0, 20000, 0),  # wrap: push-down
+        "crop": crop,
+    }
+
+
 def sanitize_images(images):
     out = []
     if not isinstance(images, list):
@@ -650,6 +811,7 @@ def sanitize_images(images):
             size = int(img.get("size") or 0)
         except Exception:
             size = 0
+        layout_fields = _sanitize_image_layout(img)
         rel_path = img.get("file") or img.get("path") or ""
         if isinstance(rel_path, str) and rel_path.strip():
             # Normalise to "images/<basename>" and refuse anything odd.
@@ -662,6 +824,7 @@ def sanitize_images(images):
                 "mimeType": mime,
                 "size": size,
                 "file": "images/" + base,
+                **layout_fields,
             })
             continue
         data_url = img.get("dataUrl") or img.get("src") or ""
@@ -676,6 +839,7 @@ def sanitize_images(images):
             "mimeType": mime,
             "size": size,
             "dataUrl": data_url,
+            **layout_fields,
         })
     return out
 
@@ -730,7 +894,8 @@ def find_note(nid):
 
 def purge_trash():
     """Drop trashed notes older than TRASH_DAYS. Returns True if changed."""
-    cutoff = now_ms() - TRASH_DAYS * 24 * 3600 * 1000
+    days = int(SETTINGS.get("trash_days") or TRASH_DAYS)
+    cutoff = now_ms() - days * 24 * 3600 * 1000
     keep = [n for n in STATE["notes"]
             if not (n.get("trashed") and (n.get("trashed_at") or 0) < cutoff)]
     if len(keep) != len(STATE["notes"]):
@@ -746,6 +911,31 @@ class Server(ThreadingHTTPServer):
     # SO_REUSEADDR behaves differently on Windows (it would let two instances
     # bind the same port), so only enable it on POSIX.
     allow_reuse_address = (os.name != "nt")
+
+    # --- connection cap (Settings -> Server -> max connections) ---
+    # Localhost is exempt so the desktop window can never be starved out.
+    # Note each open browser tab holds one long-lived SSE connection, so
+    # keep the limit comfortably above your device count.
+    _conn_lock = threading.Lock()
+    _active_conns = 0
+
+    def verify_request(self, request, client_address):
+        limit = int(SETTINGS.get("max_connections") or 0)
+        ip = client_address[0] if client_address else ""
+        if limit > 0 and ip not in ("127.0.0.1", "::1"):
+            with Server._conn_lock:
+                if Server._active_conns >= limit:
+                    return False              # connection dropped
+        return True
+
+    def process_request_thread(self, request, client_address):
+        with Server._conn_lock:
+            Server._active_conns += 1
+        try:
+            super().process_request_thread(request, client_address)
+        finally:
+            with Server._conn_lock:
+                Server._active_conns -= 1
 
 
 LOGIN_PAGE = """<!DOCTYPE html>
@@ -876,6 +1066,22 @@ class Handler(BaseHTTPRequestHandler):
             return False
         return self._name_allowed(parsed.hostname)
 
+    def _ip_ok(self):
+        """Blacklist / whitelist check. Localhost is always allowed, so the
+        desktop window can never be locked out by a bad rule."""
+        ip = self.client_address[0] if self.client_address else ""
+        if ip in ("127.0.0.1", "::1"):
+            return True
+        if ip in (SETTINGS.get("blacklist") or []):
+            return False
+        wl = SETTINGS.get("whitelist") or []
+        if wl and ip not in wl:
+            return False
+        return True
+
+    def _is_local(self):
+        return (self.client_address[0] if self.client_address else "") in ("127.0.0.1", "::1")
+
     # -- helpers --
     def _send(self, code, ctype, body):
         self.send_response(code)
@@ -915,7 +1121,13 @@ class Handler(BaseHTTPRequestHandler):
         return self._json({"error": "request body too large"}, 413)
 
     def _api_blocked(self, path):
-        if path.startswith("/api/server/") or path in ("/", "/index.html"):
+        # /api/settings stays reachable while the toggle is OFF: the socket
+        # is re-bound to loopback then, so only this machine can ask, and
+        # the Settings panel must keep working (it is where the addresses
+        # and the ON button live). POST /api/settings was already handled
+        # before this check; this keeps GET consistent with it.
+        if (path.startswith("/api/server/") or path == "/api/settings"
+                or path in ("/", "/index.html")):
             return False
         return not SERVER_ENABLED
 
@@ -923,6 +1135,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if not self._host_ok():
             return self._json({"error": "invalid Host header"}, 400)
+        if not self._ip_ok():                                    # <-- ADD
+            return self._json({"error": "forbidden"}, 403)       # <-- ADD
         path = urlparse(self.path).path
         if not self._authorized():
             if path in ("/", "/index.html"):
@@ -986,6 +1200,13 @@ class Handler(BaseHTTPRequestHandler):
             self._send(200, ctype, body)
             return
 
+        if path == "/api/settings":
+            return self._json({**SETTINGS,
+                               "editable": self._is_local(),
+                               "addresses": server_addresses(),
+                               "port": SERVER_PORT,
+                               "server_enabled": SERVER_ENABLED})
+
         if path == "/api/notes":
             with _LOCK:
                 if purge_trash():
@@ -997,8 +1218,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):
         if not self._host_ok():
             return self._json({"error": "invalid Host header"}, 400)
-        if not self._origin_ok():
-            return self._json({"error": "cross-origin request rejected"}, 403)
+        if not self._ip_ok():                                    # <-- ADD
+            return self._json({"error": "forbidden"}, 403)       # <-- ADD
         path = urlparse(self.path).path
         data = self._body()
         if data is None:
@@ -1007,6 +1228,19 @@ class Handler(BaseHTTPRequestHandler):
             return self._login(data)
         if not self._authorized():
             return self._json({"error": "unauthorized"}, 401)
+        if path == "/api/settings":
+            if not self._is_local():
+                return self._json({"error": "settings can only be changed "
+                                            "from the machine running the server"}, 403)
+            with _LOCK:
+                SETTINGS.update(sanitize_settings(data))
+                save_settings()
+            _broadcast()   # other open tabs pick up the new trash_days etc.
+            return self._json({**SETTINGS,
+                               "editable": True,
+                               "addresses": server_addresses(),
+                               "port": SERVER_PORT,
+                               "server_enabled": SERVER_ENABLED})
         if self._api_blocked(path):
             return self._json({"error": "server disabled"}, 503)
         with _LOCK:
@@ -1055,8 +1289,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         if not self._host_ok():
             return self._json({"error": "invalid Host header"}, 400)
-        if not self._origin_ok():
-            return self._json({"error": "cross-origin request rejected"}, 403)
+        if not self._ip_ok():                                    # <-- ADD
+            return self._json({"error": "forbidden"}, 403)       # <-- ADD
         if not self._authorized():
             return self._json({"error": "unauthorized"}, 401)
         path = urlparse(self.path).path
@@ -1089,9 +1323,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         if not self._host_ok():
             return self._json({"error": "invalid Host header"}, 400)
-        if not self._origin_ok():
-            return self._json({"error": "cross-origin request rejected"}, 403)
-        if not self._authorized():
+        if not self._ip_ok():                                    # <-- ADD
+            return self._json({"error": "forbidden"}, 403)       # <-- ADD
             return self._json({"error": "unauthorized"}, 401)
         path = urlparse(self.path).path
         if self._api_blocked(path):
@@ -1172,6 +1405,70 @@ def _darken_windows_titlebar(window, frame):
         pass                          # older Windows / missing dwmapi
 
 
+_GUI_INSTALL_ATTEMPTED = False
+
+
+def _linux_install_gui_deps():
+    """Offer to install the native-window packages on Linux (source runs).
+
+    Only makes sense when running from source: installing system packages
+    can't add modules to a frozen PyInstaller bundle (the Linux release
+    bundles Qt for exactly that reason). Uses apt on Debian/Ubuntu; asks in
+    the terminal when one is attached, otherwise goes through pkexec, whose
+    password dialog doubles as the consent prompt. Returns True when the
+    install succeeded and PyQt5 became importable."""
+    global _GUI_INSTALL_ATTEMPTED
+    if _GUI_INSTALL_ATTEMPTED:
+        return False
+    _GUI_INSTALL_ATTEMPTED = True
+
+    if getattr(sys, "frozen", False) or platform.system().lower() != "linux":
+        return False
+    if shutil.which("apt-get") is None:
+        # Not a Debian/Ubuntu family system -- just explain instead of
+        # guessing package names for every distro.
+        say("[info] for a native window, install your distro's PyQt5 WebEngine")
+        say("       packages (e.g. Fedora: python3-pyqt5 + python3-pyqtwebengine)")
+        return False
+
+    packages = ["python3-pyqt5", "python3-pyqt5.qtwebengine"]
+
+    if os.geteuid() == 0:                       # already root: just install
+        cmd = ["apt-get", "install", "-y"] + packages
+    elif sys.stdin is not None and sys.stdin.isatty():
+        say("The app can show a real desktop window instead of a browser tab,")
+        say("but the packages for that are missing. Install them now with:")
+        say(f"    sudo apt-get install -y {' '.join(packages)}")
+        try:
+            answer = input("Install? [y/N] ").strip().lower()
+        except EOFError:
+            answer = ""
+        if answer not in ("y", "yes"):
+            say("[info] skipped; opening in the browser instead")
+            return False
+        cmd = ["sudo", "apt-get", "install", "-y"] + packages
+    elif shutil.which("pkexec"):                # no terminal: GUI auth prompt
+        say("[info] asking for permission to install the desktop window packages")
+        cmd = ["pkexec", "apt-get", "install", "-y"] + packages
+    else:
+        say("[info] for a native window run:")
+        say(f"    sudo apt-get install -y {' '.join(packages)}")
+        return False
+
+    try:
+        say(f"[..] installing: {' '.join(packages)}")
+        subprocess.check_call(cmd)
+    except Exception as e:
+        say(f"[warn] install failed or was cancelled ({e}); using the browser")
+        return False
+
+    if _import_qt():
+        say("[ok] desktop window packages installed")
+        return True
+    say("[warn] packages installed but PyQt5 still not importable; using the browser")
+    return False
+
+
 def _init_qt_app():
     """Create the QApplication BEFORE any worker threads exist.
 
@@ -1185,6 +1482,13 @@ def _init_qt_app():
     try:
         app = QApplication.instance()
         if app is None:
+            if getattr(sys, "frozen", False) and platform.system().lower() == "linux":
+                # Ubuntu 23.10+ restricts unprivileged user namespaces via
+                # AppArmor, which breaks the Chromium sandbox inside bundled
+                # apps (same issue every Electron app has). The window only
+                # ever renders our own localhost content, so running without
+                # the sandbox is fine. Users can override via the env var.
+                os.environ.setdefault("QTWEBENGINE_CHROMIUM_FLAGS", "--no-sandbox")
             if _QtCoreQt is not None:
                 # Required for QtWebEngine; must be set before the app exists
                 # (and only then, or Qt prints a warning of its own).
@@ -1206,6 +1510,11 @@ def open_desktop_window(url):
     """
     say("Opening native desktop window")
     frame = _frame_color()
+
+    # No window backend at all? On a from-source Linux run we can offer to
+    # install one right now (the packaged Linux app bundles Qt already).
+    if QApplication is None and webview is None:
+        _linux_install_gui_deps()
 
     if QApplication is not None and QMainWindow is not None and QUrl is not None and QWebEngineView is not None:
         try:
@@ -1282,6 +1591,8 @@ class DesktopApp:
         self._open()
 
     def _open(self):
+        if QApplication is None and webview is None:
+            _linux_install_gui_deps()    # from-source Linux: offer a window backend
         _init_qt_app()               # Qt must exist before any threads start
         port = ensure_server_started()
         if port is None:

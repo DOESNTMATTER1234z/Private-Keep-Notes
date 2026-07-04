@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Igi-Notes</title>
@@ -31,7 +33,7 @@
         * { box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Roboto', sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
@@ -55,7 +57,15 @@
 
         header .logo { font-size: 1.5rem; display: flex; align-items: center; gap: 15px; cursor: pointer;}
         header .logo span { color: var(--accent); font-weight: bold; font-size: 1.8rem; }
-        
+       
+        header .logo .menu-btn {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            border-radius: 50%; padding: 8px; user-select: none;
+        }
+        header .logo .menu-btn:hover { background: var(--hover-bg); }
+
         .search-bar {
             margin-left: 50px;
             background: rgba(255,255,255,0.08);
@@ -74,6 +84,11 @@
             height: 100vh;
             overflow-y: auto;
             border-right: 1px solid var(--border-color);
+            transition: width 0.2s ease, padding 0.2s ease;
+            flex-shrink: 0;
+        }
+        body.sidebar-hidden .sidebar {
+            width: 0; padding: 0; border-right: none; overflow: hidden;
         }
 
         .nav-item {
@@ -218,6 +233,125 @@
         /* --- Labels --- */
         .label-chip { background: rgba(255,255,255,0.1); border-radius: 12px; padding: 2px 8px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 5px; margin: 2px;}
         .label-chip span { cursor: pointer; }
+        
+/* --- Settings --- */
+        .header-icon {
+            font-family: 'Material Symbols Outlined';
+            font-size: 1.6rem; color: var(--text-muted); cursor: pointer;
+            padding: 8px; border-radius: 50%; user-select: none;
+        }
+        .header-icon:hover { background: var(--hover-bg); color: var(--text-color); }
+        .settings-box {
+            background: #2a2b2e; border: 1px solid var(--border-color);
+            border-radius: 10px; width: min(760px, 94vw); height: min(560px, 84vh);
+            display: flex; overflow: hidden;
+        }
+        .settings-side { width: 190px; flex-shrink: 0; border-right: 1px solid var(--border-color); padding: 14px 0; }
+        .settings-side h2 { margin: 0 0 10px; padding: 0 18px; font-size: 1.1rem; }
+        .settings-tab { padding: 12px 18px; cursor: pointer; border-radius: 0 20px 20px 0; margin-right: 10px; }
+        .settings-tab:hover { background: var(--hover-bg); }
+        .settings-tab.active { background: #41331c; color: var(--accent); }
+        .settings-main { flex: 1; padding: 18px 24px; overflow-y: auto; }
+        .settings-main h3 { margin-top: 0; }
+        .set-row {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .set-row .set-label { flex: 1; }
+        .set-row .set-label small { display: block; color: var(--text-muted); margin-top: 2px; }
+        .set-row input[type="number"], .set-row textarea {
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-color); padding: 8px; font-family: inherit;
+        }
+        .set-row input[type="number"] { width: 90px; }
+        .set-row textarea { width: 240px; min-height: 64px; resize: vertical; }
+        .set-row input[type="color"] {
+            width: 44px; height: 32px; border: 1px solid var(--border-color);
+            border-radius: 6px; background: transparent; cursor: pointer; padding: 2px;
+        }
+        .set-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        .set-select, .reminder-fields select, .reminder-fields input {
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-color); padding: 8px; font-family: inherit;
+        }
+        .set-select option, .reminder-fields option { background: #2a2b2e; }
+
+        /* --- Reminder picker (fill in fields instead of typing a format) --- */
+        .reminder-fields { display: flex; flex-direction: column; gap: 12px; }
+        .reminder-fields label {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 14px; color: var(--text-color);
+        }
+        .reminder-fields input[type="date"] { color-scheme: dark; }
+        .reminder-time { display: flex; align-items: center; gap: 5px; }
+        .reminder-current { color: var(--text-muted); font-size: 0.85rem; margin: -4px 0 0; }
+
+        /* --- Drawing editor -------------------------------------------- */
+        /* Below the ui-modal dialogs (z 1000) so "Discard?" / "Clear?"
+           confirms appear ON TOP of the drawing editor, above the note
+           editor (z 900) it is opened from. */
+        #drawEditor { z-index: 990; }
+        .draw-box {
+            background: #2a2b2e; border: 1px solid var(--border-color);
+            border-radius: 10px; padding: 14px;
+            display: flex; flex-direction: column; gap: 12px;
+            max-width: 96vw; max-height: 94vh;
+        }
+        .draw-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+        .draw-group { display: flex; align-items: center; gap: 6px; }
+        .draw-tool {
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);
+            border-radius: 6px; font-size: 1.1rem; padding: 6px 10px; cursor: pointer;
+        }
+        .draw-tool:hover { background: var(--hover-bg); }
+        .draw-tool.active { border-color: var(--accent); background: #41331c; }
+        .draw-toggle {
+            display: flex; align-items: center; gap: 5px;
+            color: var(--text-color); font-size: 0.85rem; cursor: pointer; user-select: none;
+        }
+        .draw-toggle input { accent-color: var(--accent); cursor: pointer; }
+        .draw-toggle.disabled { opacity: 0.35; pointer-events: none; }
+        .draw-toolbar input[type="color"] {
+            width: 38px; height: 30px; border: 1px solid var(--border-color);
+            border-radius: 6px; background: transparent; cursor: pointer; padding: 2px;
+        }
+        .draw-toolbar input[type="range"] { width: 110px; accent-color: var(--accent); cursor: pointer; }
+        .draw-size-preview {
+            width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+            background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px;
+        }
+        .draw-size-preview span { display: block; border-radius: 50%; background: #fff; }
+        .draw-stage { display: flex; justify-content: center; min-height: 0; }
+        #drawCanvas {
+            background: var(--bg-color); border: 1px solid var(--border-color);
+            border-radius: 6px; max-width: 100%; max-height: calc(94vh - 170px);
+            width: auto; height: auto; touch-action: none; cursor: crosshair;
+        }
+        .draw-buttons { display: flex; justify-content: flex-end; gap: 8px; }
+        .shortcut-btn {
+            background: rgba(255,255,255,0.08); border: 1px solid var(--border-color);
+            border-radius: 6px; color: var(--text-color); padding: 8px 12px;
+            cursor: pointer; min-width: 130px; font-family: inherit;
+        }
+        .shortcut-btn.listening { border-color: var(--accent); color: var(--accent); }
+        .settings-actions { margin-top: 16px; display: flex; gap: 10px; justify-content: flex-end; }
+        .settings-actions button {
+            border: none; border-radius: 6px; padding: 9px 16px;
+            cursor: pointer; font-weight: bold; font-family: inherit;
+        }
+        .settings-actions .primary { background: var(--accent); color: #202124; }
+        .settings-actions .plain { background: rgba(255,255,255,0.08); color: var(--text-color); }
+        .settings-note { color: var(--text-muted); font-size: 0.85rem; margin: 10px 0 0; }
+        .host-addr-list { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+        .host-addr { display: flex; align-items: center; gap: 6px; }
+        .host-addr a {
+            font-family: 'Consolas', 'Menlo', monospace; font-size: 0.9rem;
+            color: #8ab4f8; text-decoration: none;
+            background: rgba(255,255,255,0.06); border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 6px 10px;
+        }
+        .host-addr a:hover { text-decoration: underline; }
+        .host-addr .icon-btn { font-size: 0.9rem; }
 
         /* --- Trash Banner --- */
         .trash-banner { display: none; width: 100%; max-width: 1200px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; justify-content: space-between; align-items: center; font-style: italic;}
@@ -249,6 +383,10 @@
         }
         .ui-modal-buttons { display: flex; justify-content: flex-end; gap: 8px; }
         .ui-modal-ok { background: var(--accent); color: #202124; }
+        /* The shared alert/confirm dialog must paint above everything it can
+           be triggered from: the reminder picker (z 1000, later in the DOM)
+           and the drawing editor (z 990). */
+        #uiModal { z-index: 1010; }
 
         /* Save indicator ("Saving…" / "Saved") in the header */
         .save-status { color: var(--text-muted); font-size: 0.85rem; opacity: 0; transition: opacity .25s; margin-left: auto; white-space: nowrap; }
@@ -281,17 +419,101 @@
         .editor-meta { display: flex; justify-content: space-between; gap: 10px; color: var(--text-muted); font-size: 0.75rem; margin-top: 6px; }
         .creator-count { color: var(--text-muted); font-size: 0.75rem; align-self: center; margin-left: auto; margin-right: 10px; white-space: nowrap; }
         .notes-grid .note-card { cursor: pointer; }
+
+        /* ===== Image layout engine (expanded editor) ===== */
+        .editor-media-body { position: relative; }
+        .editor-body-text {
+            position: relative; z-index: 1;
+            min-height: 46px; width: 100%;
+            background: transparent; border: none; outline: none;
+            color: var(--text-color); font-family: inherit; font-size: 0.95rem;
+            white-space: pre-wrap; word-break: break-word;
+        }
+        .editor-body-text:empty::before { content: attr(data-placeholder); color: var(--text-muted); }
+
+        .media-img { position: relative; user-select: none; -webkit-user-select: none; }
+        .media-img img { display: block; width: 100%; height: auto; border-radius: 6px; pointer-events: auto; }
+        .media-img .media-frame { overflow: hidden; border-radius: 6px; position: relative; }
+        .media-img .media-frame img { max-width: none; }
+        .media-img.mode-row  { margin: 8px auto; }
+        .media-img.mode-wrap.side-left  { float: left;  margin: 4px 12px 8px 0; }
+        .media-img.mode-wrap.side-right { float: right; margin: 4px 0 8px 12px; }
+        .media-img.mode-overlay { position: absolute; z-index: 0; opacity: 0.92; }
+        .media-img.mode-overlay img { pointer-events: none; } /* text stays editable on top */
+        .media-img.mode-overlay .media-chip { display: flex; }
+        .media-clear { clear: both; }
+        .hidden { display: none !important; }
+
+        /* corner resize handles, shown on hover */
+        .media-img .rz {
+            position: absolute; width: 12px; height: 12px; z-index: 3;
+            background: var(--accent); border: 2px solid #202124; border-radius: 50%;
+            opacity: 0; transition: opacity .15s; pointer-events: auto;
+        }
+        .media-img:hover .rz, .media-img.dragging .rz { opacity: 1; }
+        .media-img .rz.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+        .media-img .rz.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+        .media-img .rz.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+        .media-img .rz.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+        /* drag chip for overlay mode (the image body lets clicks through) */
+        .media-chip {
+            display: none; position: absolute; top: -10px; left: 50%;
+            transform: translateX(-50%); z-index: 3; cursor: grab;
+            background: var(--accent); color: #202124; border-radius: 10px;
+            padding: 1px 10px; font-size: 0.7rem; font-weight: bold;
+        }
+        .media-img.dragging { opacity: 0.6; cursor: grabbing; }
+
+        /* right-click menu for images */
+        .img-menu {
+            position: fixed; z-index: 1200; min-width: 190px;
+            background: #2a2b2e; border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 6px 0; box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        }
+        .img-menu div { padding: 8px 16px; cursor: pointer; font-size: 0.9rem; }
+        .img-menu div:hover { background: var(--hover-bg); }
+        .img-menu div.checked::before { content: "✓ "; color: var(--accent); }
+        .img-menu hr { border: none; border-top: 1px solid var(--border-color); margin: 5px 0; }
+
+        /* lightbox: enlarged view, everything behind darkened */
+        .lightbox-overlay {
+            position: fixed; inset: 0; z-index: 1150;
+            background: rgba(0,0,0,0.82);
+            display: flex; align-items: center; justify-content: center;
+            flex-direction: column; gap: 14px; padding: 3vh 3vw;
+        }
+        .lightbox-overlay .media-frame { overflow: hidden; border-radius: 6px; position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.8); }
+        .lightbox-overlay .media-frame img { position: absolute; max-width: none; display: block; }
+
+        /* crop editor */
+        .crop-stage { position: relative; display: inline-block; }
+        .crop-stage img { display: block; max-width: 78vw; max-height: 70vh; border-radius: 4px; opacity: 0.45; }
+        .crop-rect {
+            position: absolute; border: 2px solid var(--accent); cursor: move;
+            box-shadow: 0 0 0 9999px rgba(0,0,0,0.35);
+        }
+        .crop-rect .cz {
+            position: absolute; width: 14px; height: 14px;
+            background: var(--accent); border: 2px solid #202124; border-radius: 50%;
+        }
+        .crop-rect .cz.nw { top: -8px; left: -8px; cursor: nwse-resize; }
+        .crop-rect .cz.ne { top: -8px; right: -8px; cursor: nesw-resize; }
+        .crop-rect .cz.sw { bottom: -8px; left: -8px; cursor: nesw-resize; }
+        .crop-rect .cz.se { bottom: -8px; right: -8px; cursor: nwse-resize; }
+        .crop-buttons { display: flex; gap: 10px; }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="logo" onclick="setView('notes')"><span>☰</span> Igi-Notes</div>
+        <div class="logo" onclick="setView('notes')"><span class="material-symbols-outlined menu-btn" role="button" tabindex="0" title="Hide / show menu" onclick="event.stopPropagation(); toggleSidebar()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();toggleSidebar();}">menu</span> Igi-Notes</div>
         <div class="search-bar">
             <input type="text" id="searchInput" placeholder="Search" oninput="renderGrids()">
         </div>
         <span id="saveStatus" class="save-status" aria-live="polite"></span>
-        <div id="serverControls" style="margin-left:auto; display:none; align-items:center; gap:10px;">
+        <span class="material-symbols-outlined header-icon" id="settingsBtn" role="button" tabindex="0" title="Settings" style="margin-left:auto;" onclick="openSettings()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSettings();}">settings</span>
+        <div id="serverControls" style="display:none; align-items:center; gap:10px; margin-left:10px;">
             <span id="serverStatus" style="color:#9aa0a6; font-size:0.9rem;">Server on</span>
             <button id="serverToggle" onclick="toggleServerFromUi()" style="background:#1b4b01; color:white; border:none; border-radius:999px; padding:8px 14px; cursor:pointer; font-weight:bold;">ON</button>
         </div>
@@ -327,6 +549,7 @@
                         <button class="icon-btn" title="Toggle List" onclick="toggleCreatorList()">☑️</button>
                         <button class="icon-btn" title="Add Label" onclick="addLabelPrompt(null, true)">🏷️</button>
                         <button class="icon-btn" title="Add image" onclick="document.getElementById('creator-image-input').click()">🖼️</button>
+                        <button class="icon-btn" title="Draw" onclick="openDrawEditor(null, true)">🖌️</button>
                     </div>
                     <span class="creator-count" id="creatorCount"></span>
                     <button class="close-btn" onclick="submitNote()">Close</button>
@@ -339,7 +562,7 @@
         </div>
 
         <div class="trash-banner" id="trashBanner">
-            Notes in Trash are deleted after 7 days.
+         Notes in Trash are deleted after <span id="trashDaysLabel">30</span> days.
             <button onclick="emptyTrash()">Empty Trash</button>
         </div>
 
@@ -360,8 +583,85 @@
     </div>
     <input id="editor-image-input" type="file" accept="image/*" multiple style="display:none;" onchange="handleImageSelection(this.files, false, editorNoteId)">
 
+    <!-- Settings -->
+    <div class="ui-modal-overlay" id="settingsModal" style="display:none;">
+        <div class="settings-box">
+            <div class="settings-side">
+                <h2>Settings</h2>
+                <div class="settings-tab active" data-tab="appearance" onclick="showSettingsTab('appearance')">Appearance</div>
+                <div class="settings-tab" data-tab="behavior" onclick="showSettingsTab('behavior')">App behavior</div>
+                <div class="settings-tab" data-tab="server" onclick="showSettingsTab('server')">Server</div>
+                <div class="settings-tab" data-tab="shortcuts" onclick="showSettingsTab('shortcuts')">Shortcuts</div>
+            </div>
+            <div class="settings-main" id="settingsMain"></div>
+        </div>
+    </div>
+
     <!-- Snackbar (archive / restore feedback) -->
     <div class="snackbar" id="snackbar"></div>
+
+    <!-- Image right-click menu -->
+    <div class="img-menu" id="imgMenu" style="display:none;"></div>
+
+    <!-- Lightbox: click an image for a big view -->
+    <div class="lightbox-overlay" id="lightbox" style="display:none;">
+        <div class="media-frame" id="lightboxFrame"><img id="lightboxImg" draggable="false"></div>
+    </div>
+
+    <!-- Crop editor: right-click a resize handle -->
+    <div class="lightbox-overlay" id="cropEditor" style="display:none;">
+        <div class="crop-stage" id="cropStage">
+            <img id="cropImg" draggable="false">
+            <div class="crop-rect" id="cropRect">
+                <div class="cz nw"></div><div class="cz ne"></div>
+                <div class="cz sw"></div><div class="cz se"></div>
+            </div>
+        </div>
+        <div class="crop-buttons">
+            <button class="close-btn" id="cropCancel">Cancel</button>
+            <button class="close-btn" id="cropReset">Reset crop</button>
+            <button class="close-btn ui-modal-ok" id="cropApply">Apply</button>
+        </div>
+    </div>
+
+    <!-- Drawing editor: sketch something and attach it as an image -->
+    <div class="lightbox-overlay" id="drawEditor" style="display:none;">
+        <div class="draw-box">
+            <div class="draw-toolbar">
+                <div class="draw-group" id="drawTools">
+                    <button class="draw-tool" data-tool="pen" title="Pen — solid line" onclick="setDrawTool('pen')">🖊️</button>
+                    <button class="draw-tool" data-tool="pencil" title="Pencil — thin, light line" onclick="setDrawTool('pencil')">✏️</button>
+                    <button class="draw-tool" data-tool="brush" title="Brush — soft, wide line" onclick="setDrawTool('brush')">🖌️</button>
+                    <button class="draw-tool" data-tool="circle" title="Circle — hold and drag out from the center" onclick="setDrawTool('circle')">⭕</button>
+                    <button class="draw-tool" data-tool="box" title="Box — hold and drag out from the center" onclick="setDrawTool('box')">⬜</button>
+                </div>
+                <label class="draw-toggle" id="drawStraightWrap" title="Pen / pencil / brush strokes become straight lines from where you press to where you release">
+                    <input type="checkbox" id="drawStraight" onchange="drawState.straight = this.checked">
+                    <span>Straight lines</span>
+                </label>
+                <label class="draw-toggle" id="drawPerfectWrap" title="ON: perfect circle / square. OFF: ellipse / rectangle — width follows how far your mouse is from the center along X, height along Y">
+                    <input type="checkbox" id="drawPerfect" checked onchange="drawState.perfect = this.checked">
+                    <span>Perfect shape</span>
+                </label>
+                <div class="draw-group">
+                    <input type="color" id="drawColor" value="#ffffff" title="Color" onchange="setDrawColor(this.value)" oninput="setDrawColor(this.value)">
+                    <input type="range" id="drawSize" min="1" max="40" value="6" title="Thickness" oninput="setDrawSize(this.value)">
+                    <span class="draw-size-preview" title="Stroke preview"><span id="drawSizeDot"></span></span>
+                </div>
+                <div class="draw-group">
+                    <button class="icon-btn" title="Undo last stroke (Ctrl+Z)" onclick="drawUndo()">↩️</button>
+                    <button class="icon-btn" title="Clear the whole drawing" onclick="drawClear()">🗑️</button>
+                </div>
+            </div>
+            <div class="draw-stage">
+                <canvas id="drawCanvas" width="1200" height="750" oncontextmenu="return false;"></canvas>
+            </div>
+            <div class="draw-buttons">
+                <button class="close-btn" id="drawCancel">Cancel</button>
+                <button class="close-btn ui-modal-ok" id="drawSave">Add to note</button>
+            </div>
+        </div>
+    </div>
 
     <!-- In-page dialog (replaces prompt/confirm/alert) -->
     <div class="ui-modal-overlay" id="uiModal" style="display:none;">
@@ -371,6 +671,33 @@
             <div class="ui-modal-buttons">
                 <button class="close-btn" id="uiModalCancel">Cancel</button>
                 <button class="close-btn ui-modal-ok" id="uiModalOk">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reminder picker: fill in the fields, no format to remember -->
+    <div class="ui-modal-overlay" id="reminderModal" style="display:none;">
+        <div class="ui-modal">
+            <div class="ui-modal-message">Remind me</div>
+            <p class="reminder-current" id="remCurrent" style="display:none;"></p>
+            <div class="reminder-fields">
+                <label>Date <input type="date" id="remDate"></label>
+                <label>Time
+                    <span class="reminder-time">
+                        <select id="remHour"></select>
+                        <span>:</span>
+                        <select id="remMinute"></select>
+                        <select id="remAmPm" style="display:none;">
+                            <option value="AM">AM</option>
+                            <option value="PM">PM</option>
+                        </select>
+                    </span>
+                </label>
+            </div>
+            <div class="ui-modal-buttons">
+                <button class="close-btn" id="remRemove" style="margin-right:auto; display:none;">Remove</button>
+                <button class="close-btn" id="remCancel">Cancel</button>
+                <button class="close-btn ui-modal-ok" id="remSave">Save</button>
             </div>
         </div>
     </div>
@@ -400,6 +727,317 @@
         const bodyInput = document.getElementById('create-body');
         const sidebarEl = document.getElementById('sidebar');
         const creatorPalette = document.getElementById('creator-palette');
+        
+        // Burger button: hide / show the whole sidebar (state survives reloads)
+        function toggleSidebar() {
+            const hidden = document.body.classList.toggle('sidebar-hidden');
+            try { localStorage.setItem('iginotes-sidebar', hidden ? 'hidden' : 'shown'); } catch (e) {}
+        }
+        try {
+            if (localStorage.getItem('iginotes-sidebar') === 'hidden') document.body.classList.add('sidebar-hidden');
+        } catch (e) {}
+        
+        // ==================================================================
+        //  Settings
+        //  - Client-side prefs (colors, tooltips, shortcuts) live in
+        //    localStorage: they are per-device on purpose.
+        //  - Server-side prefs (trash days, connections, IP lists) live in
+        //    settings.json next to the notes, via /api/settings, and can only
+        //    be CHANGED from the machine running the server.
+        // ==================================================================
+        const DEFAULT_SETTINGS = {
+            bgColor: '#202124', sidebarColor: '#202124', accentColor: '#fbbc04',
+            tooltips: true,
+            timeFormat: '24h',       // '24h' (13:30) or '12h' (1:30 PM)
+            shortcuts: {
+                undo:   {enabled: true, ctrl: true,  shift: false, key: 'u', label: 'Undo'},
+                redo:   {enabled: true, ctrl: true,  shift: false, key: 'r', label: 'Redo'},
+                search: {enabled: true, ctrl: false, shift: false, key: '/', label: 'Focus search'},
+                classicZY: {enabled: true, label: 'Classic Ctrl+Z / Ctrl+Y (outside text fields)'},
+            },
+        };
+        function loadAppSettings() {
+            const out = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+            try {
+                const raw = JSON.parse(localStorage.getItem('iginotes-settings') || '{}');
+                for (const k of ['bgColor','sidebarColor','accentColor','tooltips','timeFormat']) {
+                    if (raw[k] !== undefined) out[k] = raw[k];
+                }
+                if (out.timeFormat !== '12h' && out.timeFormat !== '24h') out.timeFormat = '24h';
+                for (const a in out.shortcuts) {
+                    if (raw.shortcuts && raw.shortcuts[a]) Object.assign(out.shortcuts[a], raw.shortcuts[a], {label: out.shortcuts[a].label});
+                }
+            } catch (e) {}
+            return out;
+        }
+        let appSettings = loadAppSettings();
+        function saveAppSettings() {
+            try { localStorage.setItem('iginotes-settings', JSON.stringify(appSettings)); } catch (e) {}
+        }
+
+        function applyAppearance() {
+            const r = document.documentElement.style;
+            r.setProperty('--bg-color', appSettings.bgColor);
+            r.setProperty('--sidebar-bg', appSettings.sidebarColor);
+            r.setProperty('--accent', appSettings.accentColor);
+        }
+        applyAppearance();
+
+        function applyTooltips() {
+            if (appSettings.tooltips) return;
+            document.querySelectorAll('[title]').forEach(el => el.removeAttribute('title'));
+        }
+
+        // --- server-side settings ---
+        let serverSettings = null;
+
+        // Clipboard helper for the "Hosted at" addresses. navigator.clipboard
+        // needs a secure context (or localhost); the execCommand fallback
+        // covers plain-http access from other devices.
+        async function copyText(text, btn) {
+            let ok = false;
+            try {
+                await navigator.clipboard.writeText(text);
+                ok = true;
+            } catch (e) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { ok = document.execCommand('copy'); } catch (err) {}
+                ta.remove();
+            }
+            if (btn) {
+                const old = btn.textContent;
+                btn.textContent = ok ? '✅' : '❌';
+                setTimeout(() => { btn.textContent = old; }, 1200);
+            }
+        }
+        async function fetchServerSettings() {
+            try {
+                serverSettings = await (await fetch('/api/settings')).json();
+            } catch (e) { serverSettings = null; }
+            const lbl = document.getElementById('trashDaysLabel');
+            if (lbl && serverSettings) lbl.textContent = serverSettings.trash_days;
+        }
+
+        // --- modal ---
+        let settingsCapture = null;   // {action} while rebinding a shortcut
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'flex';
+            fetchServerSettings().then(() => {
+                const active = document.querySelector('.settings-tab.active');
+                showSettingsTab(active ? active.dataset.tab : 'appearance');
+            });
+            showSettingsTab(document.querySelector('.settings-tab.active').dataset.tab);
+        }
+        function closeSettings() {
+            settingsCapture = null;
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+        document.getElementById('settingsModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeSettings();
+        });
+
+        function showSettingsTab(tab) {
+            document.querySelectorAll('.settings-tab').forEach(t =>
+                t.classList.toggle('active', t.dataset.tab === tab));
+            settingsCapture = null;
+            const main = document.getElementById('settingsMain');
+            if (tab === 'appearance') main.innerHTML = renderAppearanceTab();
+            else if (tab === 'behavior') main.innerHTML = renderBehaviorTab();
+            else if (tab === 'server') main.innerHTML = renderServerTab();
+            else main.innerHTML = renderShortcutsTab();
+        }
+
+        const setRow = (label, hint, control) => `
+            <div class="set-row">
+                <div class="set-label">${label}${hint ? `<small>${hint}</small>` : ''}</div>
+                ${control}
+            </div>`;
+
+        function renderAppearanceTab() {
+            return `<h3>Appearance</h3>` +
+                setRow('Background color', 'The main canvas behind your notes',
+                    `<input type="color" value="${appSettings.bgColor}" onchange="setAppearance('bgColor', this.value)">`) +
+                setRow('Sidebar color', '',
+                    `<input type="color" value="${appSettings.sidebarColor}" onchange="setAppearance('sidebarColor', this.value)">`) +
+                setRow('Accent color', 'Highlights, pins, buttons',
+                    `<input type="color" value="${appSettings.accentColor}" onchange="setAppearance('accentColor', this.value)">`) +
+                `<div class="settings-actions">
+                    <button class="plain" onclick="resetAppearance()">Reset to defaults</button>
+                </div>
+                <p class="settings-note">Colors are per device (stored in this browser).</p>`;
+        }
+        function setAppearance(key, value) {
+            appSettings[key] = value;
+            saveAppSettings();
+            applyAppearance();
+        }
+        function resetAppearance() {
+            for (const k of ['bgColor','sidebarColor','accentColor']) appSettings[k] = DEFAULT_SETTINGS[k];
+            saveAppSettings();
+            applyAppearance();
+            showSettingsTab('appearance');
+        }
+
+        function renderBehaviorTab() {
+            const s = serverSettings;
+            const ro = s && s.editable ? '' : 'disabled';
+            return `<h3>App behavior</h3>` +
+                setRow('Show tooltips', 'The little hover hints on buttons',
+                    `<input type="checkbox" ${appSettings.tooltips ? 'checked' : ''} onchange="setTooltips(this.checked)">`) +
+                setRow('Time format', 'How times are shown on reminders and note timestamps (per device)',
+                    `<select class="set-select" onchange="setTimeFormat(this.value)">
+                        <option value="24h" ${appSettings.timeFormat !== '12h' ? 'selected' : ''}>24-hour (13:30)</option>
+                        <option value="12h" ${appSettings.timeFormat === '12h' ? 'selected' : ''}>12-hour (1:30 PM)</option>
+                    </select>`) +
+                setRow('Empty trash after', 'Days a note stays in the trash before it is deleted forever. Stored on the server — applies to every device.',
+                    `<span><input type="number" id="setTrashDays" min="1" max="3650" value="${s ? s.trash_days : 30}" ${ro}> days</span>`) +
+                `<div class="settings-actions">
+                    <button class="primary" ${ro} onclick="saveServerSettings(['trash_days'])">Save</button>
+                </div>` +
+                (s && s.editable ? '' : `<p class="settings-note">Server-stored values can only be changed on the computer running Igi-Notes.</p>`);
+        }
+        function setTooltips(on) {
+            appSettings.tooltips = on;
+            saveAppSettings();
+            renderGrids();                 // fresh elements carry titles again
+            if (editorNoteId !== null) renderNoteEditor();
+            applyTooltips();
+        }
+
+        function setTimeFormat(fmt) {
+            appSettings.timeFormat = fmt === '12h' ? '12h' : '24h';
+            saveAppSettings();
+            renderGrids();                 // reminder chips + timestamps
+            if (editorNoteId !== null) renderNoteEditor();
+        }
+
+        // Every displayed date/time goes through these so the 12h/24h
+        // setting applies everywhere at once.
+        function fmtTime(d) {
+            const p = n => String(n).padStart(2, '0');
+            if (appSettings.timeFormat === '12h') {
+                const h = d.getHours() % 12 || 12;
+                return `${h}:${p(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
+            }
+            return `${p(d.getHours())}:${p(d.getMinutes())}`;
+        }
+        function fmtDateTime(value) {
+            const d = value instanceof Date ? value : new Date(value);
+            if (isNaN(d)) return '';
+            return `${d.toLocaleDateString()} ${fmtTime(d)}`;
+        }
+
+        function renderServerTab() {
+            const s = serverSettings;
+            if (!s) return `<h3>Server</h3><p class="settings-note">Could not reach /api/settings.</p>`;
+            const ro = s.editable ? '' : 'disabled';
+            const addrs = (s.addresses || []);
+            const addrHint = s.server_enabled === false
+                ? 'The server toggle is OFF, so right now only this machine can connect.'
+                : 'Open one of these in a browser on another device on your network.';
+            const addrHtml = addrs.length
+                ? `<div class="host-addr-list">` + addrs.map(a => `
+                    <div class="host-addr">
+                        <a href="${escapeHtml(a)}" target="_blank" rel="noopener">${escapeHtml(a)}</a>
+                        <button class="icon-btn" title="Copy address" onclick="copyText('${escapeHtml(a)}', this)">📋</button>
+                    </div>`).join('') + `</div>`
+                : `<span class="settings-note">Unknown</span>`;
+            return `<h3>Server</h3>` +
+                setRow('Hosted at', addrHint, addrHtml) +
+                setRow('Max connections', 'Concurrent remote connections (0 = unlimited). Each open tab on another device holds one live-sync connection, so keep this above your device count. This machine is never limited.',
+                    `<input type="number" id="setMaxConn" min="0" max="1000" value="${s.max_connections}" ${ro}>`) +
+                setRow('Blacklist', 'One IP per line. These devices are always rejected.',
+                    `<textarea id="setBlacklist" ${ro} placeholder="e.g. 192.168.1.50">${escapeHtml((s.blacklist || []).join('\n'))}</textarea>`) +
+                setRow('Whitelist', 'One IP per line. If NOT empty, ONLY these devices may connect. This machine (127.0.0.1) is always allowed, so you cannot lock yourself out.',
+                    `<textarea id="setWhitelist" ${ro} placeholder="empty = allow all">${escapeHtml((s.whitelist || []).join('\n'))}</textarea>`) +
+                `<div class="settings-actions">
+                    <button class="primary" ${ro} onclick="saveServerSettings(['max_connections','blacklist','whitelist'])">Save</button>
+                </div>` +
+                (s.editable ? '' : `<p class="settings-note">Server settings can only be changed on the computer running Igi-Notes.</p>`);
+        }
+
+        async function saveServerSettings(keys) {
+            const body = {};
+            if (keys.includes('trash_days')) body.trash_days = parseInt(document.getElementById('setTrashDays').value, 10) || 30;
+            if (keys.includes('max_connections')) body.max_connections = parseInt(document.getElementById('setMaxConn').value, 10) || 0;
+            if (keys.includes('blacklist')) body.blacklist = document.getElementById('setBlacklist').value.split('\n').map(x => x.trim()).filter(Boolean);
+            if (keys.includes('whitelist')) body.whitelist = document.getElementById('setWhitelist').value.split('\n').map(x => x.trim()).filter(Boolean);
+            try {
+                serverSettings = await (await apiSave('/api/settings', {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(body)
+                })).json();
+                showSnackbar('Server settings saved');
+                fetchServerSettings();
+            } catch (err) {
+                console.error('Saving settings failed', err);
+                showSnackbar('Saving settings failed');
+            }
+        }
+
+        function comboLabel(b) {
+            if (!b.key) return 'Not set';
+            const k = b.key === ' ' ? 'Space' : b.key.length === 1 ? b.key.toUpperCase() : b.key;
+            return (b.ctrl ? 'Ctrl+' : '') + (b.shift ? 'Shift+' : '') + k;
+        }
+        function renderShortcutsTab() {
+            let html = `<h3>Shortcuts</h3>`;
+            for (const a of ['undo', 'redo', 'search']) {
+                const b = appSettings.shortcuts[a];
+                html += setRow(b.label, '',
+                    `<span style="display:flex; gap:10px; align-items:center;">
+                        <button class="shortcut-btn" id="sc-btn-${a}" onclick="startCapture('${a}')">${comboLabel(b)}</button>
+                        <input type="checkbox" ${b.enabled ? 'checked' : ''} onchange="setShortcutEnabled('${a}', this.checked)" title="Enabled">
+                    </span>`);
+            }
+            const zy = appSettings.shortcuts.classicZY;
+            html += setRow(zy.label, 'Inside a text field Ctrl+Z stays the normal typing-undo either way.',
+                `<input type="checkbox" ${zy.enabled ? 'checked' : ''} onchange="setShortcutEnabled('classicZY', this.checked)">`);
+            html += `<div class="settings-actions">
+                    <button class="plain" onclick="resetShortcuts()">Reset to defaults</button>
+                </div>
+                <p class="settings-note">Click a key combo, then press the new keys. Escape cancels. Escape itself always closes menus and editors.</p>`;
+            return html;
+        }
+        function setShortcutEnabled(action, on) {
+            appSettings.shortcuts[action].enabled = on;
+            saveAppSettings();
+        }
+        function resetShortcuts() {
+            appSettings.shortcuts = JSON.parse(JSON.stringify(DEFAULT_SETTINGS.shortcuts));
+            saveAppSettings();
+            showSettingsTab('shortcuts');
+        }
+        function startCapture(action) {
+            settingsCapture = {action};
+            document.querySelectorAll('.shortcut-btn').forEach(b => b.classList.remove('listening'));
+            const btn = document.getElementById('sc-btn-' + action);
+            btn.classList.add('listening');
+            btn.textContent = 'Press keys…';
+        }
+        function captureShortcut(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const action = settingsCapture.action;
+            if (e.key === 'Escape') {                     // cancel
+                settingsCapture = null;
+                showSettingsTab('shortcuts');
+                return;
+            }
+            if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;  // wait for a real key
+            const b = appSettings.shortcuts[action];
+            b.ctrl = e.ctrlKey || e.metaKey;
+            b.shift = e.shiftKey;
+            b.key = e.key.toLowerCase();
+            settingsCapture = null;
+            saveAppSettings();
+            showSettingsTab('shortcuts');
+            showSnackbar(`${b.label}: ${comboLabel(b)}`);
+        }
 
         // Keyboard support for the sidebar (nav items are divs, not buttons)
         sidebarEl.addEventListener('keydown', (e) => {
@@ -568,11 +1206,21 @@
                 <button class="icon-btn pin-btn ${note.pinned?'active':''}" ${preview?'disabled':''} onclick="updateNote('${nid}', {pinned: ${!note.pinned}})" title="Pin">📌</button>
                 <textarea class="title" rows="1" placeholder="Title" ${ro} oninput="autoResize(this); updateEditorCount()" onchange="updateNote('${nid}', {title: this.value})">${escapeHtml(note.title)}</textarea>
             `;
-            if ((note.images || []).length) {
-                html += `<div class="image-preview-list">${(note.images || []).map(img => `<div class="image-preview"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}"></div>`).join('')}</div>`;
-            }
+
+            // --- media + text share one container so text can flow around
+            //     (wrap) or over (overlay) the images ---
+            const imgs = note.images || [];
+            const mediaHtml = (list) => list.map(img => buildMediaImg(note, img, preview)).join('');
+            const above   = imgs.filter(i => (i.layout || 'row') === 'row' && (i.place || 'above') === 'above');
+            const below   = imgs.filter(i => (i.layout || 'row') === 'row' && i.place === 'below');
+            const wraps   = imgs.filter(i => i.layout === 'wrap');
+            const overs   = imgs.filter(i => i.layout === 'overlay');
+
+            html += `<div class="editor-media-body" id="editorMediaBody">`;
+            html += mediaHtml(above);
+            html += mediaHtml(wraps);      // floats: text after them wraps around
             if (note.type === 'list') {
-                html += `<div class="list-container">`;
+                html += `<div class="list-container editor-body-text" id="editorTextBlock">`;
                 (note.items || []).forEach(item => {
                     if (!note.showChecked && item.checked) return;
                     const iid = safeId(item.id);
@@ -586,18 +1234,25 @@
                 if (!preview) html += `<div class="add-list-item" onclick="addListItem('${nid}')"><span>+</span> List item</div>`;
                 html += `</div>`;
             } else {
-                html += `<textarea class="auto-resize" placeholder="Empty note" ${ro} oninput="autoResize(this); updateEditorCount()" onchange="updateNote('${nid}', {body: this.value})">${escapeHtml(note.body)}</textarea>`;
+                // contenteditable instead of a textarea: a textarea is a sealed
+                // box whose text can never flow around floats. Content stays
+                // plain text (saved via innerText), so storage is unchanged.
+                html += `<div class="editor-body-text" id="editorTextBlock" contenteditable="${preview ? 'false' : 'plaintext-only'}" data-placeholder="Empty note" oninput="updateEditorCount()" onblur="updateNote('${nid}', {body: this.innerText})">${escapeHtml(note.body)}</div>`;
             }
+            html += `<div class="media-clear"></div>`;
+            html += mediaHtml(below);
+            html += mediaHtml(overs);      // absolute: on the canvas, under the text
+            html += `</div>`;
 
             html += `<div class="chips-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">`;
-            if (note.reminder) html += `<div class="label-chip" title="Reminder">🔔 ${new Date(note.reminder).toLocaleString()}</div>`;
+            if (note.reminder) html += `<div class="label-chip" title="Reminder">🔔 ${fmtDateTime(note.reminder)}</div>`;
             (note.labels || []).forEach(lid => {
                 const l = labels.find(x => x.id === lid);
                 if (l) html += `<div class="label-chip"><span>${escapeHtml(l.name)}</span>${preview ? '' : ` <span onclick="removeLabel('${nid}', '${safeId(lid)}')">&times;</span>`}</div>`;
             });
             html += `</div>`;
 
-            html += `<div class="editor-meta"><span id="editorCount"></span><span title="Created: ${new Date(note.created).toLocaleString()}">Edited: ${new Date(note.updated).toLocaleString()}</span></div>`;
+            html += `<div class="editor-meta"><span id="editorCount"></span><span title="Created: ${fmtDateTime(note.created)}">Edited: ${fmtDateTime(note.updated)}</span></div>`;
 
             html += `<div class="card-toolbar">`;
             if (preview) {
@@ -617,6 +1272,7 @@
                     </div>
                     <button class="icon-btn" title="Label" onclick="addLabelPrompt('${nid}')">🏷️</button>
                     <button class="icon-btn" title="Add image" onclick="event.stopPropagation(); document.getElementById('editor-image-input').click()">🖼️</button>
+                    <button class="icon-btn" title="Draw" onclick="event.stopPropagation(); openDrawEditor('${nid}')">🖌️</button>
                     <button class="icon-btn" title="Archive" onclick="toggleArchive('${nid}', ${!note.archived})">📦</button>
                     <button class="icon-btn" title="Trash" onclick="closeNoteEditor(); updateNote('${nid}', {trashed: true})">🗑️</button>
                 `;
@@ -625,13 +1281,15 @@
 
             card.innerHTML = html;
             updateEditorCount();
+            initMediaImages(preview);   // synchronous: images are laid out
+                                        // before the browser paints, so a
+                                        // re-render no longer flashes
             setTimeout(() => {
                 card.querySelectorAll('textarea').forEach(autoResize);
                 const pal = card.querySelector(`#editor-pal-${nid}`);
                 if (pal) buildColorPalette(pal, (c) => updateNote(note.id, {color: c}));
             }, 0);
         }
-
         // --- Word / character counters -------------------------------------------
         function countText(parts) {
             const text = parts.join(' ').trim();
@@ -639,14 +1297,18 @@
             const chars = parts.reduce((a, p) => a + (p || '').length, 0);
             return {words, chars};
         }
+        
+        
 
         function updateEditorCount() {
             const el = document.getElementById('editorCount');
             if (!el || editorNoteId === null) return;
             const card = document.getElementById('noteEditorCard');
             const parts = [];
-            card.querySelectorAll('textarea.title, textarea.auto-resize, .list-container input[type="text"]')
+            card.querySelectorAll('textarea.title, .list-container input[type="text"]')
                 .forEach(i => parts.push(i.value || ''));
+            const bodyEl = card.querySelector('#editorTextBlock[contenteditable]');
+            if (bodyEl) parts.push(bodyEl.innerText || '');
             const {words, chars} = countText(parts);
             el.textContent = `${words} ${words === 1 ? 'word' : 'words'} · ${chars} ${chars === 1 ? 'character' : 'characters'}`;
         }
@@ -668,11 +1330,755 @@
         titleInput.addEventListener('input', updateCreatorCount);
         bodyInput.addEventListener('input', updateCreatorCount);
 
+        // ==================================================================
+        //  Image layout engine (expanded editor)
+        //  - hover corners to resize; right-click a corner to crop
+        //  - left-click for a lightbox; drag to move
+        //  - right-click the image for layout modes: own row / wrap / overlay
+        // ==================================================================
+        const _natCache = {};   // src -> {w, h} natural size
+
+        function imgCrop(img) {
+            const c = img.crop || {};
+            return {
+                x: Math.max(0, Math.min(99, +c.x || 0)),
+                y: Math.max(0, Math.min(99, +c.y || 0)),
+                w: Math.max(1, Math.min(100, +c.w || 100)),
+                h: Math.max(1, Math.min(100, +c.h || 100)),
+            };
+        }
+        const isCropped = (img) => {
+            const c = imgCrop(img);
+            return c.x !== 0 || c.y !== 0 || c.w !== 100 || c.h !== 100;
+        };
+
+        function defaultImgWidth(img, containerW) {
+            if (img.width > 0) return Math.max(60, Math.min(img.width, containerW));
+            const base = img.layout === 'wrap' ? containerW * 0.42
+                       : img.layout === 'overlay' ? 240
+                       : Math.min(containerW, 320);
+            return Math.max(60, Math.round(base));
+        }
+
+        function buildMediaImg(note, img, preview) {
+            const iid = safeId(img.id);
+            const mode = img.layout === 'wrap' ? 'mode-wrap' : img.layout === 'overlay' ? 'mode-overlay' : 'mode-row';
+            const side = img.side === 'right' ? 'side-right' : 'side-left';
+            let style = '';
+            if (img.layout === 'wrap' && img.yOffset > 0) style += `margin-top:${img.yOffset}px;`;
+            if (img.layout === 'overlay') style += `left:${img.x || 0}px; top:${img.y || 0}px;`;
+            // Width inline from the start: without it there was one painted
+            // frame at full container width before layoutMediaImg shrank the
+            // image, which read as a flash on every re-render.
+            style += img.width > 0 ? `width:min(100%, ${Math.max(60, Math.round(img.width))}px);`
+                   : img.layout === 'wrap'    ? 'width:42%;'
+                   : img.layout === 'overlay' ? 'width:240px;'
+                   : 'width:min(100%, 320px);';
+            const cropAttr = isCropped(img) ? ` data-crop="${escapeHtml(JSON.stringify(imgCrop(img)))}"` : '';
+            const controls = preview ? '' : `
+                <div class="rz nw"></div><div class="rz ne"></div>
+                <div class="rz sw"></div><div class="rz se"></div>
+                <div class="media-chip" title="Drag to move · click to open · right-click for layout options">⠿ move</div>
+            `;
+            return `
+                <div class="media-img ${mode} ${side}" data-iid="${iid}"${cropAttr} style="${style}">
+                    <div class="media-frame"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}" draggable="false" /></div>
+                    ${controls}
+                </div>
+            `;
+        }
+
+        // Apply width + crop window to a wrapper once the natural size is known.
+        function layoutMediaImg(wrapper, img, containerW) {
+            const frame = wrapper.querySelector('.media-frame');
+            const el = frame.querySelector('img');
+            const w = defaultImgWidth(img, containerW);
+            wrapper.style.width = w + 'px';
+           const finish = (nat) => {
+                const c = imgCrop(img);
+                let dispH;
+                if (!isCropped(img)) {   // simple case: no window math needed
+                    el.style.position = 'static';
+                    el.style.width = '100%';
+                    frame.style.height = 'auto';
+                    dispH = w * nat.h / nat.w;
+                } else {
+                    const innerW = w * 100 / c.w;
+                    const innerH = innerW * nat.h / nat.w;
+                    dispH = innerH * c.h / 100;
+                    frame.style.height = dispH + 'px';
+                    el.style.position = 'absolute';
+                    el.style.width = innerW + 'px';
+                    el.style.left = (-innerW * c.x / 100) + 'px';
+                    el.style.top = (-innerH * c.y / 100) + 'px';
+                }
+                wrapper.dataset.h = Math.round(dispH);
+                if (img.layout === 'overlay') {
+                    // Keep the image inside the body horizontally, even when
+                    // the saved x came from a wider window or another device.
+                    const maxL = Math.max(0, containerW - w);
+                    if ((parseFloat(wrapper.style.left) || 0) > maxL) wrapper.style.left = maxL + 'px';
+                    fitOverlayHeight();
+                }
+            };
+            withNaturalSize(el, finish);
+        }
+
+        // Grow the media body so absolutely-positioned overlay images stay
+        // inside it. They contribute no height of their own, so they used to
+        // spill out over the chips, the toolbar, and the card border.
+        function fitOverlayHeight() {
+            const body = document.getElementById('editorMediaBody');
+            if (!body) return;
+            let need = 0;
+            body.querySelectorAll('.media-img.mode-overlay').forEach(w => {
+                const h = parseFloat(w.dataset.h) || w.offsetHeight || 0;
+                need = Math.max(need, (parseFloat(w.style.top) || 0) + h);
+            });
+            body.style.minHeight = need ? (need + 8) + 'px' : '';
+        }
+
+        function withNaturalSize(el, cb) {
+            const src = el.getAttribute('src');
+            if (_natCache[src]) { cb(_natCache[src]); return; }
+            const probe = new Image();
+            probe.onload = () => {
+                _natCache[src] = {w: probe.naturalWidth || 1, h: probe.naturalHeight || 1};
+                cb(_natCache[src]);
+            };
+            probe.onerror = () => cb({w: 4, h: 3});
+            probe.src = src;
+        }
+
+        function saveImages() {
+            const note = notes.find(n => n.id === editorNoteId);
+            if (note) updateNote(note.id, {images: note.images});
+        }
+
+        function editorImage(iid) {
+            const note = notes.find(n => n.id === editorNoteId);
+            return note ? {note, img: (note.images || []).find(i => safeId(i.id) === iid)} : {};
+        }
+
+        // --- resize + move state machine -----------------------------------
+        let mediaDrag = null;   // {kind:'resize'|'move', ...}
+
+        function initMediaImages(preview) {
+            const body = document.getElementById('editorMediaBody');
+            if (!body) return;
+            const containerW = body.clientWidth || 600;   // fallback for tests
+            body.querySelectorAll('.media-img').forEach(wrapper => {
+                const iid = wrapper.dataset.iid;
+                const {img} = editorImage(iid);
+                if (!img) return;
+                layoutMediaImg(wrapper, img, containerW);
+                if (preview) {
+                    wrapper.onclick = () => openLightbox(img);
+                    return;
+                }
+                wrapper.addEventListener('mousedown', (e) => {
+                    if (e.button !== 0) return;
+                    const handle = e.target.closest('.rz');
+                    e.preventDefault();
+                    mediaDrag = {
+                        iid, wrapper, containerW,
+                        startX: e.clientX, startY: e.clientY, moved: false,
+                        kind: handle ? 'resize' : 'move',
+                        corner: handle ? [...handle.classList].find(c => ['nw','ne','sw','se'].includes(c)) : null,
+                        startW: wrapper.getBoundingClientRect().width || parseFloat(wrapper.style.width) || 200,
+                        startLeft: parseFloat(wrapper.style.left) || 0,
+                        startTop: parseFloat(wrapper.style.top) || 0,
+                    };
+                    wrapper.classList.add('dragging');
+                });
+                wrapper.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.target.closest('.rz')) openCropEditor(iid);   // right-click a corner tab
+                    else openImgMenu(e.clientX, e.clientY, iid);
+                });
+            });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (!mediaDrag) return;
+            const d = mediaDrag;
+            const dx = e.clientX - d.startX, dy = e.clientY - d.startY;
+            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) d.moved = true;
+            const {img} = editorImage(d.iid);
+            if (!img) return;
+            if (d.kind === 'resize') {
+                const grow = d.corner === 'ne' || d.corner === 'se' ? dx : -dx;
+                const w = Math.max(60, Math.min(d.startW + grow, d.containerW));
+                d.liveW = w;
+                d.wrapper.style.width = w + 'px';
+                // Overlay + left-side handle: anchor the RIGHT edge so the
+                // image grows toward the cursor instead of sliding away.
+                if (img.layout === 'overlay' && (d.corner === 'nw' || d.corner === 'sw')) {
+                    d.wrapper.style.left = Math.max(0, d.startLeft - (w - d.startW)) + 'px';
+                }
+                layoutMediaImg(d.wrapper, {...img, width: w}, d.containerW);
+            } else if (img.layout === 'overlay') {
+                const wNow = d.wrapper.getBoundingClientRect().width || d.startW;
+                const maxL = Math.max(0, d.containerW - wNow);
+                d.wrapper.style.left = Math.min(maxL, Math.max(0, d.startLeft + dx)) + 'px';
+                d.wrapper.style.top = Math.max(0, d.startTop + dy) + 'px';
+                fitOverlayHeight();          // the body grows live while dragging down
+            } else {
+                d.wrapper.style.opacity = 0.5;
+                d.wrapper.style.transform = `translate(${dx}px, ${dy}px)`;
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!mediaDrag) return;
+            const d = mediaDrag; mediaDrag = null;
+            d.wrapper.classList.remove('dragging');
+            d.wrapper.style.transform = ''; d.wrapper.style.opacity = '';
+            const {img} = editorImage(d.iid);
+            if (!img) return;
+            if (!d.moved) {                        // a plain left-click
+                if (d.kind !== 'resize') openLightbox(img);
+                return;
+            }
+            if (d.kind === 'resize') {
+                img.width = Math.round(d.liveW || d.startW);
+                if (img.layout === 'overlay') {
+                    img.x = Math.round(Math.max(0, parseFloat(d.wrapper.style.left) || 0));
+                }
+                saveImages();
+                return;
+            }
+            const body = document.getElementById('editorMediaBody');
+            const rect = body.getBoundingClientRect();
+            if (img.layout === 'overlay') {
+                img.x = Math.round(Math.max(0, parseFloat(d.wrapper.style.left) || 0));
+                img.y = Math.round(Math.max(0, parseFloat(d.wrapper.style.top) || 0));
+            } else if (img.layout === 'wrap') {
+                img.side = (rect.width > 0 && e.clientX - rect.left > rect.width / 2) ? 'right' : 'left';
+                img.yOffset = Math.max(0, Math.round(e.clientY - rect.top));
+            } else {                               // row: above or below the text
+                const text = document.getElementById('editorTextBlock');
+                const tr = text ? text.getBoundingClientRect() : null;
+                img.place = (tr && e.clientY > tr.top + tr.height / 2) ? 'below' : 'above';
+            }
+            saveImages();                          // re-render puts it in place
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!mediaDrag) return;
+            const d = mediaDrag; mediaDrag = null;
+            d.wrapper.classList.remove('dragging');
+            d.wrapper.style.transform = ''; d.wrapper.style.opacity = '';
+            const {img} = editorImage(d.iid);
+            if (!img) return;
+            if (!d.moved) {                        // a plain left-click
+                if (d.kind !== 'resize') openLightbox(img);
+                return;
+            }
+            if (d.kind === 'resize') {
+                img.width = Math.round(d.liveW || d.startW);
+                if (img.layout === 'overlay') {
+                    img.x = Math.round(Math.max(0, parseFloat(d.wrapper.style.left) || 0));
+                }
+                saveImages();
+                return;
+            }
+            const body = document.getElementById('editorMediaBody');
+            const rect = body.getBoundingClientRect();
+            if (img.layout === 'overlay') {
+                img.x = Math.round(Math.max(0, parseFloat(d.wrapper.style.left) || 0));
+                img.y = Math.round(Math.max(0, parseFloat(d.wrapper.style.top) || 0));
+            } else if (img.layout === 'wrap') {
+                img.side = (rect.width > 0 && e.clientX - rect.left > rect.width / 2) ? 'right' : 'left';
+                img.yOffset = Math.max(0, Math.round(e.clientY - rect.top));
+            } else {                               // row: above or below the text
+                const text = document.getElementById('editorTextBlock');
+                const tr = text ? text.getBoundingClientRect() : null;
+                img.place = (tr && e.clientY > tr.top + tr.height / 2) ? 'below' : 'above';
+            }
+            saveImages();                          // re-render puts it in place
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (!mediaDrag) return;
+            const d = mediaDrag; mediaDrag = null;
+            d.wrapper.classList.remove('dragging');
+            d.wrapper.style.transform = ''; d.wrapper.style.opacity = '';
+            const {img} = editorImage(d.iid);
+            if (!img) return;
+            if (!d.moved) {                        // a plain left-click
+                if (d.kind !== 'resize') openLightbox(img);
+                return;
+            }
+            if (d.kind === 'resize') {
+                img.width = Math.round(d.liveW || d.startW);
+                saveImages();
+                return;
+            }
+            const body = document.getElementById('editorMediaBody');
+            const rect = body.getBoundingClientRect();
+            if (img.layout === 'overlay') {
+                img.x = Math.round(Math.max(0, parseFloat(d.wrapper.style.left) || 0));
+                img.y = Math.round(Math.max(0, parseFloat(d.wrapper.style.top) || 0));
+            } else if (img.layout === 'wrap') {
+                img.side = (rect.width > 0 && e.clientX - rect.left > rect.width / 2) ? 'right' : 'left';
+                img.yOffset = Math.max(0, Math.round(e.clientY - rect.top));
+            } else {                               // row: above or below the text
+                const text = document.getElementById('editorTextBlock');
+                const tr = text ? text.getBoundingClientRect() : null;
+                img.place = (tr && e.clientY > tr.top + tr.height / 2) ? 'below' : 'above';
+            }
+            saveImages();                          // re-render puts it in place
+        });
+
+        // --- right-click menu ------------------------------------------------
+        function openImgMenu(x, y, iid) {
+            const {img} = editorImage(iid);
+            if (!img) return;
+            const menu = document.getElementById('imgMenu');
+            const layout = img.layout || 'row';
+            const item = (label, checked, fn) =>
+                `<div class="${checked ? 'checked' : ''}" data-act="${fn}">${label}</div>`;
+            menu.innerHTML =
+                item('Own row (text above/below)', layout === 'row', 'row') +
+                item('Wrap text — image left', layout === 'wrap' && img.side !== 'right', 'wrapL') +
+                item('Wrap text — image right', layout === 'wrap' && img.side === 'right', 'wrapR') +
+                item('Float behind text', layout === 'overlay', 'overlay') +
+                '<hr>' +
+                item('Crop…', false, 'crop') +
+                item('Reset size &amp; crop', false, 'reset') +
+                '<hr>' +
+                item('Remove image', false, 'remove');
+            menu.style.display = 'block';
+            menu.style.left = Math.min(x, window.innerWidth - 210) + 'px';
+            menu.style.top = Math.min(y, window.innerHeight - 260) + 'px';
+            menu.onclick = (e) => {
+                const act = e.target.dataset && e.target.dataset.act;
+                closeImgMenu();
+                if (act) applyImgAction(iid, act);
+            };
+        }
+        function closeImgMenu() {
+            const menu = document.getElementById('imgMenu');
+            menu.style.display = 'none';
+            menu.onclick = null;
+        }
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#imgMenu')) closeImgMenu();
+        });
+
+        async function applyImgAction(iid, act) {
+            const {note, img} = editorImage(iid);
+            if (!img) return;
+            if (act === 'row') { img.layout = 'row'; img.place = img.place || 'above'; }
+            else if (act === 'wrapL') { img.layout = 'wrap'; img.side = 'left'; }
+            else if (act === 'wrapR') { img.layout = 'wrap'; img.side = 'right'; }
+            else if (act === 'overlay') {
+                img.layout = 'overlay';
+                if (!img.x && !img.y) { img.x = 24; img.y = 12; }
+            }
+            else if (act === 'crop') { openCropEditor(iid); return; }
+            else if (act === 'reset') { img.width = 0; img.crop = {x:0, y:0, w:100, h:100}; }
+            else if (act === 'remove') {
+                if (!(await uiConfirm('Remove this image from the note?'))) return;
+                note.images = note.images.filter(i => i !== img);
+            }
+            saveImages();
+        }
+
+        // --- lightbox: click an image, everything behind goes dark ----------
+        function openLightbox(img) {
+            const note = notes.find(n => n.id === editorNoteId) ||
+                         notes.find(n => (n.images || []).includes(img));
+            const overlay = document.getElementById('lightbox');
+            const frame = document.getElementById('lightboxFrame');
+            const el = document.getElementById('lightboxImg');
+            el.src = note ? getImageUrl(note, img) : (img.dataUrl || '');
+            overlay.style.display = 'flex';
+            withNaturalSize(el, (nat) => {
+                const c = imgCrop(img);
+                const cropAspect = (nat.w * c.w / 100) / (nat.h * c.h / 100);
+                let w = Math.min(window.innerWidth * 0.9, nat.w * c.w / 100);
+                let h = w / cropAspect;
+                const maxH = window.innerHeight * 0.88;
+                if (h > maxH) { h = maxH; w = h * cropAspect; }
+                frame.style.width = w + 'px';
+                frame.style.height = h + 'px';
+                const innerW = w * 100 / c.w;
+                const innerH = innerW * nat.h / nat.w;
+                el.style.width = innerW + 'px';
+                el.style.left = (-innerW * c.x / 100) + 'px';
+                el.style.top = (-innerH * c.y / 100) + 'px';
+            });
+        }
+        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+        document.getElementById('lightbox').addEventListener('click', closeLightbox);
+
+        // --- crop editor: right-click any resize corner ----------------------
+        let cropTarget = null;   // {iid, natW, natH}
+
+        function openCropEditor(iid) {
+            const {note, img} = editorImage(iid);
+            if (!img) return;
+            const overlay = document.getElementById('cropEditor');
+            const el = document.getElementById('cropImg');
+            el.src = getImageUrl(note, img);
+            overlay.style.display = 'flex';
+            withNaturalSize(el, (nat) => {
+                cropTarget = {iid, nat};
+                // wait one frame so the displayed size is measurable
+                setTimeout(() => positionCropRect(imgCrop(img)), 0);
+            });
+        }
+        function positionCropRect(c) {
+            const el = document.getElementById('cropImg');
+            const rect = document.getElementById('cropRect');
+            const w = el.clientWidth || 400, h = el.clientHeight || 300;
+            rect.style.left = (w * c.x / 100) + 'px';
+            rect.style.top = (h * c.y / 100) + 'px';
+            rect.style.width = (w * c.w / 100) + 'px';
+            rect.style.height = (h * c.h / 100) + 'px';
+        }
+        function closeCropEditor() {
+            document.getElementById('cropEditor').style.display = 'none';
+            cropTarget = null;
+        }
+        document.getElementById('cropCancel').addEventListener('click', closeCropEditor);
+        document.getElementById('cropReset').addEventListener('click', () => positionCropRect({x:0, y:0, w:100, h:100}));
+        document.getElementById('cropApply').addEventListener('click', () => {
+            if (!cropTarget) return closeCropEditor();
+            const {img} = editorImage(cropTarget.iid);
+            const el = document.getElementById('cropImg');
+            const rect = document.getElementById('cropRect');
+            const w = el.clientWidth || 400, h = el.clientHeight || 300;
+            if (img) {
+                img.crop = {
+                    x: Math.max(0, Math.round(100 * (parseFloat(rect.style.left) || 0) / w)),
+                    y: Math.max(0, Math.round(100 * (parseFloat(rect.style.top) || 0) / h)),
+                    w: Math.max(1, Math.round(100 * (parseFloat(rect.style.width) || w) / w)),
+                    h: Math.max(1, Math.round(100 * (parseFloat(rect.style.height) || h) / h)),
+                };
+                img.crop.w = Math.min(img.crop.w, 100 - img.crop.x);
+                img.crop.h = Math.min(img.crop.h, 100 - img.crop.y);
+                saveImages();
+            }
+            closeCropEditor();
+        });
+
+        // dragging the crop rectangle and its corners
+        let cropDrag = null;
+        document.getElementById('cropRect').addEventListener('mousedown', (e) => {
+            e.preventDefault(); e.stopPropagation();
+            const rect = document.getElementById('cropRect');
+            const corner = e.target.closest('.cz');
+            cropDrag = {
+                corner: corner ? [...corner.classList].find(c => ['nw','ne','sw','se'].includes(c)) : null,
+                startX: e.clientX, startY: e.clientY,
+                left: parseFloat(rect.style.left) || 0, top: parseFloat(rect.style.top) || 0,
+                w: parseFloat(rect.style.width) || 50, h: parseFloat(rect.style.height) || 50,
+            };
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!cropDrag) return;
+            const el = document.getElementById('cropImg');
+            const rect = document.getElementById('cropRect');
+            const W = el.clientWidth || 400, H = el.clientHeight || 300;
+            const dx = e.clientX - cropDrag.startX, dy = e.clientY - cropDrag.startY;
+            let {left, top, w, h} = cropDrag;
+            const c = cropDrag.corner;
+            if (!c) {                          // move the whole window
+                left = Math.max(0, Math.min(left + dx, W - w));
+                top = Math.max(0, Math.min(top + dy, H - h));
+            } else {
+                if (c.includes('w')) { left = Math.max(0, Math.min(left + dx, left + w - 20)); w = cropDrag.w + (cropDrag.left - left); }
+                if (c.includes('e')) { w = Math.max(20, Math.min(cropDrag.w + dx, W - left)); }
+                if (c.includes('n')) { top = Math.max(0, Math.min(top + dy, top + h - 20)); h = cropDrag.h + (cropDrag.top - top); }
+                if (c.includes('s')) { h = Math.max(20, Math.min(cropDrag.h + dy, H - top)); }
+            }
+            rect.style.left = left + 'px'; rect.style.top = top + 'px';
+            rect.style.width = w + 'px'; rect.style.height = h + 'px';
+        });
+        document.addEventListener('mouseup', () => { cropDrag = null; });
+
+        // ==================================================================
+        //  Drawing editor
+        //  A drawing is a list of ops (strokes / lines / circles / boxes).
+        //  Committed ops live on an offscreen "base" canvas so a pointermove
+        //  only has to blit the base and stroke the op in progress — no
+        //  full replay per frame. The result is exported as a PNG (cropped
+        //  to what was actually drawn) and attached through the exact same
+        //  image pipeline as an uploaded file.
+        // ==================================================================
+        const drawState = {
+            tool: 'pen', color: '#ffffff', size: 6,
+            straight: false,           // pen/pencil/brush -> straight lines
+            perfect: true,             // circle/box -> perfect circle/square
+            ops: [], current: null,
+            target: null,              // {noteId, isCreator}
+        };
+        const drawCanvas = document.getElementById('drawCanvas');
+        const drawCtx = drawCanvas.getContext('2d');
+        const drawBase = document.createElement('canvas');   // committed ops
+        drawBase.width = drawCanvas.width;
+        drawBase.height = drawCanvas.height;
+        const drawBaseCtx = drawBase.getContext('2d');
+
+        function openDrawEditor(noteId, isCreator = false) {
+            drawState.target = {noteId, isCreator};
+            drawState.ops = [];
+            drawState.current = null;
+            drawBaseCtx.clearRect(0, 0, drawBase.width, drawBase.height);
+            renderDrawCanvas();
+            updateDrawToolbar();
+            document.getElementById('drawEditor').style.display = 'flex';
+        }
+
+        async function closeDrawEditor(force = false) {
+            if (!force && drawState.ops.length &&
+                !(await uiConfirm('Discard this drawing?'))) return;
+            drawState.target = null;
+            drawState.current = null;
+            document.getElementById('drawEditor').style.display = 'none';
+        }
+
+        function setDrawTool(t) { drawState.tool = t; updateDrawToolbar(); }
+        function setDrawColor(c) { drawState.color = c; updateDrawToolbar(); }
+        function setDrawSize(s) { drawState.size = Math.max(1, Math.min(40, parseInt(s, 10) || 6)); updateDrawToolbar(); }
+
+        function updateDrawToolbar() {
+            document.querySelectorAll('#drawTools .draw-tool').forEach(b =>
+                b.classList.toggle('active', b.dataset.tool === drawState.tool));
+            const shape = drawState.tool === 'circle' || drawState.tool === 'box';
+            // Each toggle only means something for its own tool family.
+            document.getElementById('drawStraightWrap').classList.toggle('disabled', shape);
+            document.getElementById('drawPerfectWrap').classList.toggle('disabled', !shape);
+            const dot = document.getElementById('drawSizeDot');
+            const d = Math.min(38, Math.max(3, drawState.size));
+            dot.style.width = dot.style.height = d + 'px';
+            dot.style.background = drawState.color;
+        }
+
+        // --- rendering ----------------------------------------------------
+        function pathThrough(ctx, pts) {
+            ctx.beginPath();
+            ctx.moveTo(pts[0].x, pts[0].y);
+            if (pts.length === 1) ctx.lineTo(pts[0].x + 0.01, pts[0].y);  // dot
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i].x, pts[i].y);
+        }
+
+        // One polyline = one stroke() per pass, so a self-crossing stroke
+        // never darkens itself (important for the see-through pencil/brush).
+        function strokeWithTool(ctx, pts, tool, color, size) {
+            ctx.save();
+            ctx.lineCap = ctx.lineJoin = 'round';
+            ctx.strokeStyle = color;
+            const passes =
+                tool === 'brush'  ? [{w: size * 1.9,  a: 0.12},
+                                     {w: size * 1.45, a: 0.22},
+                                     {w: size,        a: 0.55}]
+              : tool === 'pencil' ? [{w: Math.max(1, size * 0.55), a: 0.6}]
+              :                     [{w: size, a: 1}];
+            for (const p of passes) {
+                ctx.globalAlpha = p.a;
+                ctx.lineWidth = p.w;
+                pathThrough(ctx, pts);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawOp(ctx, op) {
+            if (op.kind === 'stroke' || op.kind === 'line') {
+                strokeWithTool(ctx, op.points, op.tool, op.color, op.size);
+                return;
+            }
+            ctx.save();
+            ctx.strokeStyle = op.color;
+            ctx.lineWidth = op.size;
+            ctx.beginPath();
+            if (op.kind === 'circle') {
+                ctx.ellipse(op.cx, op.cy, Math.max(op.rx, 0.5), Math.max(op.ry, 0.5), 0, 0, Math.PI * 2);
+            } else {  // box
+                ctx.rect(op.cx - op.hw, op.cy - op.hh, Math.max(op.hw, 0.5) * 2, Math.max(op.hh, 0.5) * 2);
+            }
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function renderDrawCanvas() {
+            drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+            drawCtx.drawImage(drawBase, 0, 0);
+            if (drawState.current) drawOp(drawCtx, drawState.current);
+        }
+
+        function rebuildDrawBase() {
+            drawBaseCtx.clearRect(0, 0, drawBase.width, drawBase.height);
+            for (const op of drawState.ops) drawOp(drawBaseCtx, op);
+        }
+
+        function drawUndo() {
+            if (!drawState.ops.length) return;
+            drawState.ops.pop();
+            rebuildDrawBase();
+            renderDrawCanvas();
+        }
+
+        async function drawClear() {
+            if (!drawState.ops.length) return;
+            if (!(await uiConfirm('Clear the whole drawing?'))) return;
+            drawState.ops = [];
+            rebuildDrawBase();
+            renderDrawCanvas();
+        }
+
+        // --- pointer handling ----------------------------------------------
+        function drawXY(e) {
+            const r = drawCanvas.getBoundingClientRect();
+            return {
+                x: (e.clientX - r.left) * (drawCanvas.width / r.width),
+                y: (e.clientY - r.top) * (drawCanvas.height / r.height),
+            };
+        }
+
+        drawCanvas.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            drawCanvas.setPointerCapture(e.pointerId);
+            const p = drawXY(e);
+            const {tool, color, size} = drawState;
+            if (tool === 'circle') {
+                drawState.current = {kind: 'circle', color, size, cx: p.x, cy: p.y, rx: 0, ry: 0};
+            } else if (tool === 'box') {
+                drawState.current = {kind: 'box', color, size, cx: p.x, cy: p.y, hw: 0, hh: 0};
+            } else if (drawState.straight) {
+                drawState.current = {kind: 'line', tool, color, size, points: [p, {...p}]};
+            } else {
+                drawState.current = {kind: 'stroke', tool, color, size, points: [p]};
+            }
+            renderDrawCanvas();
+        });
+
+        drawCanvas.addEventListener('pointermove', (e) => {
+            const op = drawState.current;
+            if (!op) return;
+            e.preventDefault();
+            const p = drawXY(e);
+            if (op.kind === 'stroke') {
+                op.points.push(p);
+            } else if (op.kind === 'line') {
+                op.points[1] = p;
+            } else {
+                const dx = p.x - op.cx, dy = p.y - op.cy;
+                if (op.kind === 'circle') {
+                    if (drawState.perfect) {
+                        op.rx = op.ry = Math.hypot(dx, dy);
+                    } else {
+                        // Ellipse: width follows the mouse's X distance from
+                        // the center, height follows its Y distance.
+                        op.rx = Math.abs(dx);
+                        op.ry = Math.abs(dy);
+                    }
+                } else {
+                    if (drawState.perfect) {
+                        op.hw = op.hh = Math.max(Math.abs(dx), Math.abs(dy));
+                    } else {
+                        op.hw = Math.abs(dx);
+                        op.hh = Math.abs(dy);
+                    }
+                }
+            }
+            renderDrawCanvas();
+        });
+
+        function commitDrawOp(e) {
+            const op = drawState.current;
+            if (!op) return;
+            try { drawCanvas.releasePointerCapture(e.pointerId); } catch (err) {}
+            drawState.current = null;
+            // Drop zero-size shapes (a stray click); keep single-point
+            // strokes — those are deliberate dots.
+            if ((op.kind === 'circle' && op.rx < 1 && op.ry < 1) ||
+                (op.kind === 'box' && op.hw < 1 && op.hh < 1)) {
+                renderDrawCanvas();
+                return;
+            }
+            drawState.ops.push(op);
+            drawOp(drawBaseCtx, op);
+            renderDrawCanvas();
+        }
+        drawCanvas.addEventListener('pointerup', commitDrawOp);
+        drawCanvas.addEventListener('pointercancel', commitDrawOp);
+
+        // --- saving ---------------------------------------------------------
+        // The exported PNG is cropped to the drawn content (plus padding) so
+        // a small doodle doesn't ship a huge, mostly-empty transparent image.
+        function opBounds(op) {
+            const m = op.size * (op.tool === 'brush' ? 1 : 0.5) + 2;  // stroke margin
+            if (op.points) {
+                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                for (const p of op.points) {
+                    minX = Math.min(minX, p.x); maxX = Math.max(maxX, p.x);
+                    minY = Math.min(minY, p.y); maxY = Math.max(maxY, p.y);
+                }
+                return {minX: minX - m, minY: minY - m, maxX: maxX + m, maxY: maxY + m};
+            }
+            const w = op.kind === 'circle' ? op.rx : op.hw;
+            const h = op.kind === 'circle' ? op.ry : op.hh;
+            return {minX: op.cx - w - m, minY: op.cy - h - m,
+                    maxX: op.cx + w + m, maxY: op.cy + h + m};
+        }
+
+        async function saveDrawing() {
+            if (!drawState.ops.length) { await uiAlert('Nothing drawn yet.'); return; }
+            let b = {minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity};
+            for (const op of drawState.ops) {
+                const o = opBounds(op);
+                b.minX = Math.min(b.minX, o.minX); b.maxX = Math.max(b.maxX, o.maxX);
+                b.minY = Math.min(b.minY, o.minY); b.maxY = Math.max(b.maxY, o.maxY);
+            }
+            const x = Math.max(0, Math.floor(b.minX)), y = Math.max(0, Math.floor(b.minY));
+            const w = Math.max(1, Math.min(drawCanvas.width, Math.ceil(b.maxX)) - x);
+            const h = Math.max(1, Math.min(drawCanvas.height, Math.ceil(b.maxY)) - y);
+            const out = document.createElement('canvas');
+            out.width = w; out.height = h;
+            out.getContext('2d').drawImage(drawBase, x, y, w, h, 0, 0, w, h);
+            const dataUrl = out.toDataURL('image/png');
+            const payload = {
+                id: 'img_' + Date.now() + Math.random().toString(16).slice(2),
+                name: `drawing-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`,
+                mimeType: 'image/png',
+                size: Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 3 / 4),
+                dataUrl,
+            };
+            const {noteId, isCreator} = drawState.target || {};
+            closeDrawEditor(true);
+            if (isCreator) {
+                creatorData.images.push(payload);
+                renderCreatorImages();
+                activateCreator();
+            } else if (noteId) {
+                const note = notes.find(n => n.id === noteId);
+                if (note) {
+                    note.images = [...(note.images || []), payload];
+                    await updateNote(noteId, {images: note.images});
+                }
+            }
+        }
+        document.getElementById('drawCancel').addEventListener('click', () => closeDrawEditor());
+        document.getElementById('drawSave').addEventListener('click', saveDrawing);
+
         // Close the expanded editor with Escape or a backdrop click
         document.addEventListener('keydown', (e) => {
             if (e.key !== 'Escape') return;
             const modal = document.getElementById('uiModal');
             if (modal && modal.style.display !== 'none') return;   // dialog first
+            const menu = document.getElementById('imgMenu');
+            if (menu.style.display !== 'none') { closeImgMenu(); return; }
+            if (document.getElementById('drawEditor').style.display !== 'none') { closeDrawEditor(); return; }
+            if (document.getElementById('reminderModal').style.display !== 'none') { closeReminderModal(); return; }
+            if (document.getElementById('cropEditor').style.display !== 'none') { closeCropEditor(); return; }
+            if (document.getElementById('lightbox').style.display !== 'none') { closeLightbox(); return; }
             if (editorNoteId !== null) closeNoteEditor();
         });
         document.getElementById('noteEditor').addEventListener('click', (e) => {
@@ -687,6 +2093,7 @@
                 notes = data.notes || [];
                 labels = data.labels || [];
                 notes.sort((a, b) => b.order - a.order);
+                stateShadow = JSON.parse(JSON.stringify(notes));   // history baseline   <-- ADD
                 renderApp();
             } catch (err) {
                 console.error("Load failed", err);
@@ -922,7 +2329,8 @@
         });
         
         document.addEventListener('click', (e) => {
-            if (e.target.closest('#uiModal') || e.target.closest('#noteEditor') || e.target.closest('#snackbar')) return;
+            if (e.target.closest('#uiModal') || e.target.closest('#noteEditor') || e.target.closest('#snackbar')
+                || e.target.closest('#drawEditor') || e.target.closest('#reminderModal') || e.target.closest('#settingsModal')) return;
             if (!creator.contains(e.target) && creator.classList.contains('active') && !e.target.closest('.color-palette')) {
                 submitNote();
             }
@@ -975,6 +2383,7 @@
                     });
                     const newNote = await res.json();
                     notes.unshift(newNote);
+                    rememberHistory();   // so Ctrl+U can undo the creation (to trash)   <-- ADD
                     renderGrids();
                 } catch (err) {
                     console.error("Failed to save note", err);
@@ -1038,25 +2447,67 @@
             }
 
             others.forEach(n => gridOthers.appendChild(createNoteElement(n)));
-            
+            document.querySelectorAll('#grid-pinned .note-card, #grid-others .note-card').forEach(applyThumbCrops);
             // Re-apply masonry-like resizing
             document.querySelectorAll('textarea.auto-resize').forEach(autoResize);
             refreshEditorIfOpen();   // keep the expanded editor in sync
+            applyTooltips();         // honor Settings -> App behavior -> tooltips
         }
 
-        async function handleDrop(event, targetNoteId) {
-            event.preventDefault();
-            const draggedId = event.dataTransfer?.getData('text/plain');
-            if (!draggedId || draggedId === targetNoteId) return;
-            const fromIndex = notes.findIndex(n => n.id === draggedId);
-            const toIndex = notes.findIndex(n => n.id === targetNoteId);
-            if (fromIndex < 0 || toIndex < 0) return;
-            const [moved] = notes.splice(fromIndex, 1);
-            notes.splice(toIndex, 0, moved);
-            notes.forEach((note, idx) => {
-                note.order = notes.length - idx;
+        // --- Live drag-to-reorder -------------------------------------------
+        // While a card is dragged, the other cards move aside in real time and
+        // the card can be dropped BETWEEN any two notes. The real DOM node is
+        // moved (images keep their state -> no flicker), and the final order
+        // is read back from the DOM once, on dragend.
+        let dragCard = null;
+
+        function liveDragOver(e, card) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const dragged = dragCard;
+            if (!dragged || dragged === card) return;
+            if (dragged.parentElement !== card.parentElement) return;  // pinned stays with pinned
+            const r = card.getBoundingClientRect();
+            const before = e.clientY < r.top ? true
+                         : e.clientY > r.bottom ? false
+                         : e.clientX < r.left + r.width / 2;
+            // Only touch the DOM when the position actually changes,
+            // otherwise dragover (which fires constantly) would thrash.
+            if (before) {
+                if (card.previousElementSibling !== dragged) card.parentElement.insertBefore(dragged, card);
+            } else {
+                if (card.nextElementSibling !== dragged) card.parentElement.insertBefore(dragged, card.nextElementSibling);
+            }
+        }
+
+        // Dragging over the empty space after the last card drops it at the end.
+        ['grid-pinned', 'grid-others'].forEach(id => {
+            const g = document.getElementById(id);
+            g.addEventListener('dragover', (e) => {
+                if (!dragCard || dragCard.parentElement !== g) return;
+                e.preventDefault();
+                if (e.target === g && g.lastElementChild !== dragCard) g.appendChild(dragCard);
             });
-            renderGrids();
+            g.addEventListener('drop', (e) => e.preventDefault());
+        });
+
+        async function commitDomOrder() {
+            const dragged = dragCard; dragCard = null;
+            if (!dragged) return;
+            const ids = [...document.querySelectorAll('#grid-pinned .note-card, #grid-others .note-card')]
+                .map(c => c.dataset.noteId);
+            // Rebuild the FULL notes order: visible notes take the new DOM
+            // sequence, notes hidden by the current view/search keep their slots.
+            const visible = new Set(ids);
+            const byId = new Map(notes.map(n => [n.id, n]));
+            let qi = 0;
+            const reordered = notes.map(n => visible.has(n.id) ? byId.get(ids[qi++]) : n);
+            if (reordered.every((n, i) => n === notes[i])) return;   // nothing moved
+            notes = reordered;
+            notes.forEach((note, idx) => { note.order = notes.length - idx; });
+            rememberHistory();
+            // Deliberately NO renderGrids() here: the grid already shows the
+            // new order, and rebuilding it was the drop flicker.
             try {
                 await apiSave('/api/reorder', {
                     method: 'POST',
@@ -1067,6 +2518,7 @@
                 console.error("Failed to save the new order", err);
                 await uiAlert('Saving the new order failed — reloading the latest saved state.');
                 loadState();
+                fetchServerSettings();
             }
         }
 
@@ -1076,10 +2528,18 @@
             card.className = 'note-card';
             card.style.backgroundColor = `var(--note-${note.color || 'default'})`;
             card.draggable = true;
-            card.ondragstart = (e) => { e.dataTransfer.setData('text/plain', note.id); card.classList.add('sortable-ghost'); };
-            card.ondragend = () => card.classList.remove('sortable-ghost');
-            card.ondragover = (e) => e.preventDefault();
-            card.ondrop = (e) => handleDrop(e, note.id);
+            card.ondragstart = (e) => {
+                e.dataTransfer.setData('text/plain', note.id);
+                e.dataTransfer.effectAllowed = 'move';
+                dragCard = card;
+                // rAF: the browser snapshots the drag image first, so the
+                // floating copy stays full-opacity while the card in the
+                // grid dims.
+                requestAnimationFrame(() => card.classList.add('sortable-ghost'));
+            };
+            card.ondragend = () => { card.classList.remove('sortable-ghost'); commitDomOrder(); };
+            card.ondragover = (e) => liveDragOver(e, card);
+            card.ondrop = (e) => e.preventDefault();   // order is committed on dragend
             // Click anywhere that isn't a control -> open the expanded editor
             // (in the trash this becomes a read-only restore preview).
             card.onclick = (e) => {
@@ -1093,7 +2553,7 @@
             `;
 
             if ((note.images || []).length) {
-                innerHTML += `<div class="image-preview-list">${(note.images || []).map(img => `<div class="image-preview"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}"></div>`).join('')}</div>`;
+                innerHTML += `<div class="image-preview-list">${(note.images || []).map(img => `<div class="image-preview"><img src="${escapeHtml(getImageUrl(note, img))}" alt="${escapeHtml(img.name || 'image')}" ${imgCropAttr(img)} draggable="false"></div>`).join('')}</div>`;
             }
 
             // List handling: Filter out checked items if showChecked is false
@@ -1116,7 +2576,7 @@
 
             // Labels & Reminders Display
             innerHTML += `<div class="chips-container" style="display:flex; flex-wrap:wrap; gap:5px; margin-top:5px;">`;
-            if (note.reminder) innerHTML += `<div class="label-chip" title="Reminder">🔔 ${new Date(note.reminder).toLocaleString()}</div>`;
+            if (note.reminder) innerHTML += `<div class="label-chip" title="Reminder">🔔 ${fmtDateTime(note.reminder)}</div>`;
             (note.labels || []).forEach(lid => {
                 const l = labels.find(x => x.id === lid);
                 if (l) innerHTML += `<div class="label-chip"><span>${escapeHtml(l.name)}</span> <span onclick="removeLabel('${nid}', '${safeId(lid)}')">&times;</span></div>`;
@@ -1124,8 +2584,8 @@
             innerHTML += `</div>`;
 
             // Timestamps Feature
-            const createdDate = new Date(note.created).toLocaleString();
-            const updatedDate = new Date(note.updated).toLocaleString();
+            const createdDate = fmtDateTime(note.created);
+            const updatedDate = fmtDateTime(note.updated);
             innerHTML += `<div style="font-size: 0.7rem; color: var(--text-muted); text-align: right; margin-top: 10px;" title="Created: ${createdDate}">Edited: ${updatedDate}</div>`;
 
             // Toolbar
@@ -1149,6 +2609,7 @@
                     </div>
                     <button class="icon-btn" title="Label" onclick="addLabelPrompt('${nid}')">🏷️</button>
                     <button class="icon-btn" title="Add image" onclick="event.stopPropagation(); document.getElementById('img-input-${nid}').click()">🖼️</button>
+                    <button class="icon-btn" title="Draw" onclick="event.stopPropagation(); openDrawEditor('${nid}')">🖌️</button>
                     <button class="icon-btn" title="Archive" onclick="toggleArchive('${nid}', ${!note.archived})">📦</button>
                     <button class="icon-btn" title="Trash" onclick="updateNote('${nid}', {trashed: true})">🗑️</button>
                 `;
@@ -1165,15 +2626,171 @@
                     if(pal) buildColorPalette(pal, (c) => updateNote(note.id, {color: c}));
                 }, 0);
             }
+            
 
             return card;
         }
+
+        // Grid thumbnails honour the crop set in the editor.
+        function imgCropAttr(img) {
+            return isCropped(img) ? `data-crop="${escapeHtml(JSON.stringify(imgCrop(img)))}"` : '';
+        }
+        function applyThumbCrops(root) {
+            root.querySelectorAll('.image-preview img[data-crop]').forEach(el => {
+                let c;
+                try { c = JSON.parse(el.dataset.crop); } catch { return; }
+                const box = el.parentElement;
+                withNaturalSize(el, (nat) => {
+                    const w = box.clientWidth || 120;
+                    const innerW = w * 100 / c.w;
+                    const innerH = innerW * nat.h / nat.w;
+                    box.style.position = 'relative';
+                    box.style.overflow = 'hidden';
+                    box.style.height = (innerH * c.h / 100) + 'px';
+                    el.style.position = 'absolute';
+                    el.style.maxWidth = 'none';
+                    el.style.width = innerW + 'px';
+                    el.style.left = (-innerW * c.x / 100) + 'px';
+                    el.style.top = (-innerH * c.y / 100) + 'px';
+                });
+            });
+        }
+        
+        // --- Undo / redo history --------------------------------------------
+        // Snapshot-based: before every save triggered by a user action, the
+        // previous known state of `notes` (the shadow) is pushed onto the undo
+        // stack. Undo/redo restores a snapshot by diffing it against the
+        // current state and replaying the differences through the normal API.
+        const HISTORY_MAX = 50;
+        const HISTORY_FIELDS = ['type','title','body','items','images','color',
+                                'labels','pinned','archived','trashed',
+                                'reminder','showChecked','order'];
+        let undoStack = [], redoStack = [];
+        let stateShadow = null;    // deep copy of `notes` as of the last save/load
+        let historyBusy = false;   // don't interleave two undos
+
+        const snapNotes = () => JSON.parse(JSON.stringify(notes));
+
+        function rememberHistory() {
+            if (stateShadow) {
+                undoStack.push(stateShadow);
+                if (undoStack.length > HISTORY_MAX) undoStack.shift();
+                redoStack = [];    // a new action invalidates the redo branch
+            }
+            stateShadow = snapNotes();
+        }
+
+        const pickEditable = (n) => {
+            const out = {};
+            HISTORY_FIELDS.forEach(f => { if (n[f] !== undefined) out[f] = n[f]; });
+            return out;
+        };
+
+        async function applyHistoryState(target) {
+            const currentById = new Map(notes.map(n => [n.id, n]));
+            const targetIds = new Set(target.map(n => n.id));
+            const ops = [];
+            for (const t of target) {
+                const c = currentById.get(t.id);
+                if (!c) continue;   // hard-deleted since: its files are gone, skip
+                if (JSON.stringify(pickEditable(c)) !== JSON.stringify(pickEditable(t))) {
+                    ops.push(apiSave(`/api/notes/${safeId(t.id)}`, {
+                        method: 'PUT', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(pickEditable(t))
+                    }));
+                }
+            }
+            for (const c of notes) {
+                if (!targetIds.has(c.id) && !c.trashed) {
+                    // created after this snapshot: undo it INTO the trash,
+                    // never a hard delete, so redo (or Restore) can bring it back
+                    ops.push(apiSave(`/api/notes/${safeId(c.id)}`, {
+                        method: 'PUT', headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({trashed: true})
+                    }));
+                }
+            }
+            await Promise.all(ops);
+            await apiSave('/api/reorder', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ids: target.map(n => n.id).filter(id => currentById.has(id))})
+            });
+            await loadState();          // server is the source of truth
+            stateShadow = snapNotes();  // next action diffs against this
+        }
+
+        async function undoAction() {
+            if (historyBusy) return;
+            if (!undoStack.length) { showSnackbar('Nothing to undo'); return; }
+            historyBusy = true;
+            try {
+                const target = undoStack.pop();
+                redoStack.push(snapNotes());
+                await applyHistoryState(target);
+                showSnackbar('Undid last change', 'Redo', redoAction);
+            } catch (err) {
+                console.error('Undo failed', err);
+                showSnackbar('Undo failed');
+                loadState();
+            } finally { historyBusy = false; }
+        }
+
+        async function redoAction() {
+            if (historyBusy) return;
+            if (!redoStack.length) { showSnackbar('Nothing to redo'); return; }
+            historyBusy = true;
+            try {
+                const target = redoStack.pop();
+                undoStack.push(snapNotes());
+                await applyHistoryState(target);
+                showSnackbar('Redid change');
+            } catch (err) {
+                console.error('Redo failed', err);
+                showSnackbar('Redo failed');
+                loadState();
+            } finally { historyBusy = false; }
+        }
+
+        // --- Keyboard shortcuts -----------------------------------------------
+        //   Ctrl+U            undo   (app-level, works everywhere)
+        //   Ctrl+R            redo   (app-level; use F5 to reload the page)
+        //   Ctrl+Z / Ctrl+Y   undo / redo when NOT typing (inside a text field
+        //                     they stay native so typing-undo keeps working)
+        //   Ctrl+Shift+Z      redo when not typing
+        //   /                 focus the search box
+        //   Escape            close menus / lightbox / editor (already existed)
+        document.addEventListener('keydown', (e) => {
+            const t = e.target;
+            const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+            const mod = e.ctrlKey || e.metaKey;
+            // While the drawing editor is open, Ctrl+Z undoes the last
+            // stroke; the app-level shortcuts stay out of the way.
+            if (document.getElementById('drawEditor').style.display !== 'none') {
+                if (mod && !e.altKey && (e.key || '').toLowerCase() === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    drawUndo();
+                }
+                return;
+            }
+            if (!mod && !typing && e.key === '/') {
+                e.preventDefault();
+                document.getElementById('searchInput').focus();
+                return;    
+            }
+            if (!mod || e.altKey) return;
+            const k = (e.key || '').toLowerCase();
+            if (k === 'u') { e.preventDefault(); undoAction(); }
+            else if (k === 'r') { e.preventDefault(); redoAction(); }
+            else if (k === 'z' && !typing) { e.preventDefault(); if (e.shiftKey) redoAction(); else undoAction(); }
+            else if (k === 'y' && !typing) { e.preventDefault(); redoAction(); }
+        });
 
         // --- Note Actions ---
         async function updateNote(id, patch) {
             const noteIndex = notes.findIndex(n => n.id === id);
             if (noteIndex > -1) {
                 notes[noteIndex] = { ...notes[noteIndex], ...patch };
+                rememberHistory();   // pushes the PRE-change state for undo   <-- ADD
                 renderGrids();
             }
             try {
@@ -1276,35 +2893,87 @@
             updateNote(noteId, {labels: (n.labels || []).filter(l => l !== labelId)});
         }
 
-        function formatReminderForInput(d) {
+        // --- Reminder picker -------------------------------------------------
+        // Fields instead of a typed "YYYY-MM-DD HH:MM" string. The hour list
+        // follows the 12h/24h time-format setting (App behavior tab).
+        let reminderTarget = null;   // {noteId, isCreator} while the modal is open
+
+        function fillReminderSelects(hour24, minute) {
+            const hourSel = document.getElementById('remHour');
+            const minSel = document.getElementById('remMinute');
+            const ampmSel = document.getElementById('remAmPm');
+            const is12 = appSettings.timeFormat === '12h';
             const p = n => String(n).padStart(2, '0');
-            return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+            hourSel.innerHTML = is12
+                ? Array.from({length: 12}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
+                : Array.from({length: 24}, (_, i) => `<option value="${i}">${p(i)}</option>`).join('');
+            minSel.innerHTML = Array.from({length: 60}, (_, i) => `<option value="${i}">${p(i)}</option>`).join('');
+            ampmSel.style.display = is12 ? '' : 'none';
+            if (is12) {
+                hourSel.value = String(hour24 % 12 || 12);
+                ampmSel.value = hour24 < 12 ? 'AM' : 'PM';
+            } else {
+                hourSel.value = String(hour24);
+            }
+            minSel.value = String(minute);
         }
 
-        async function addReminderPrompt(noteId, isCreator=false) {
+        function addReminderPrompt(noteId, isCreator = false) {
             const existing = isCreator
                 ? creatorData.reminder
                 : (notes.find(n => n.id === noteId) || {}).reminder;
-            const def = existing ? formatReminderForInput(new Date(existing)) : '';
-            const dateStr = await uiPrompt(
-                'Remind me at (YYYY-MM-DD HH:MM):' + (existing ? '\nLeave empty to remove the reminder.' : ''),
-                def
-            );
-            if (dateStr === null) return;                 // cancelled
-            const trimmed = dateStr.trim();
-            if (!trimmed) {                                // empty -> clear it
-                if (existing) {
-                    if (isCreator) creatorData.reminder = null;
-                    else updateNote(noteId, {reminder: null});
-                }
-                return;
+            reminderTarget = {noteId, isCreator};
+
+            // Prefill: the existing reminder, or the next full hour.
+            let d = existing ? new Date(existing) : null;
+            if (!d || isNaN(d)) {
+                d = new Date();
+                d.setHours(d.getHours() + 1, 0, 0, 0);
             }
-            const d = new Date(trimmed.replace(' ', 'T')); // parses reliably as local time
-            if (isNaN(d)) { await uiAlert("Couldn't parse that date — use YYYY-MM-DD HH:MM"); return; }
-            const iso = d.toISOString();
-            if(isCreator) creatorData.reminder = iso;
+            const p = n => String(n).padStart(2, '0');
+            document.getElementById('remDate').value =
+                `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+            fillReminderSelects(d.getHours(), d.getMinutes());
+
+            const cur = document.getElementById('remCurrent');
+            cur.style.display = existing ? '' : 'none';
+            cur.textContent = existing ? `Current reminder: ${fmtDateTime(existing)}` : '';
+            document.getElementById('remRemove').style.display = existing ? '' : 'none';
+            document.getElementById('reminderModal').style.display = 'flex';
+        }
+
+        function closeReminderModal() {
+            reminderTarget = null;
+            document.getElementById('reminderModal').style.display = 'none';
+        }
+
+        async function applyReminder(iso) {
+            if (!reminderTarget) return;
+            const {noteId, isCreator} = reminderTarget;
+            closeReminderModal();
+            if (isCreator) creatorData.reminder = iso;
             else updateNote(noteId, {reminder: iso});
         }
+
+        document.getElementById('remCancel').addEventListener('click', closeReminderModal);
+        document.getElementById('remRemove').addEventListener('click', () => applyReminder(null));
+        document.getElementById('remSave').addEventListener('click', async () => {
+            const dateStr = document.getElementById('remDate').value;   // yyyy-mm-dd
+            if (!dateStr) { await uiAlert('Pick a date for the reminder.'); return; }
+            const [y, mo, day] = dateStr.split('-').map(Number);
+            let hour = parseInt(document.getElementById('remHour').value, 10) || 0;
+            const minute = parseInt(document.getElementById('remMinute').value, 10) || 0;
+            if (appSettings.timeFormat === '12h') {
+                const pm = document.getElementById('remAmPm').value === 'PM';
+                hour = (hour % 12) + (pm ? 12 : 0);
+            }
+            const d = new Date(y, mo - 1, day, hour, minute, 0, 0);      // local time
+            if (isNaN(d)) { await uiAlert("That date doesn't exist — check the fields."); return; }
+            applyReminder(d.toISOString());
+        });
+        document.getElementById('reminderModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) closeReminderModal();
+        });
 
         // --- Helpers ---
         function autoResize(el) {
@@ -1334,9 +3003,11 @@
             if (!img) return '';
             if (img.file) {
                 const fileName = String(img.file).split('/').pop();
-                return `/api/notes/${note.id}/images/${encodeURIComponent(fileName)}`;
+                // ?v= lets the server cache images "forever": if a filename is
+                // ever reborn with different bytes, the size differs -> new URL.
+                return `/api/notes/${note.id}/images/${encodeURIComponent(fileName)}?v=${encodeURIComponent(img.size || 0)}`;
             }
-            return img.dataUrl || img.src || '';
+            return '';
         }
 
         // Close color palettes when clicking outside
