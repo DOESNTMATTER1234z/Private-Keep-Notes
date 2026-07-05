@@ -1121,11 +1121,16 @@ class Handler(BaseHTTPRequestHandler):
         return self._json({"error": "request body too large"}, 413)
 
     def _api_blocked(self, path):
-        # /api/settings stays reachable while the toggle is OFF: the socket
-        # is re-bound to loopback then, so only this machine can ask, and
-        # the Settings panel must keep working (it is where the addresses
-        # and the ON button live). POST /api/settings was already handled
-        # before this check; this keeps GET consistent with it.
+        # "Off" means "stop answering the network" -- this machine must keep
+        # working no matter what, same as the addr/settings/toggle routes
+        # below (that's the whole point of _bind_host keeping a 127.0.0.1
+        # listener alive while off). Without this exemption every note route
+        # 503'd for the desktop window too, which is exactly why notes typed
+        # while "off" never left the compose box (looked like they were
+        # stuck as unsaved drafts) and why edits couldn't persist even
+        # though the app itself was still reachable.
+        if self._is_local():
+            return False
         if (path.startswith("/api/server/") or path == "/api/settings"
                 or path in ("/", "/index.html")):
             return False
@@ -1323,8 +1328,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         if not self._host_ok():
             return self._json({"error": "invalid Host header"}, 400)
-        if not self._ip_ok():                                    # <-- ADD
-            return self._json({"error": "forbidden"}, 403)       # <-- ADD
+        if not self._ip_ok():
+            return self._json({"error": "forbidden"}, 403)
+        if not self._authorized():
             return self._json({"error": "unauthorized"}, 401)
         path = urlparse(self.path).path
         if self._api_blocked(path):
