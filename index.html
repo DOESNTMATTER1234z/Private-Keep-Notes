@@ -30,7 +30,9 @@
             --hover-bg: rgba(255,255,255,0.04);
 
             /* Read by layoutMasonry() in <script> below, so the JS packing
-               math and the CSS stay driven by one source of truth. */
+               math and the CSS stay driven by one source of truth. The gap is
+               user-configurable: Settings -> App behavior -> Note spacing
+               (0 = card outlines overlap into a single shared line). */
             --masonry-gap: 15px;
             --masonry-min-col: 240px;
         }
@@ -175,10 +177,20 @@
         .grid-container { width: 100%; max-width: 1200px; padding: 20px; }
         .grid-section-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin: 20px 0 10px 10px; font-weight: bold;}
         .notes-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 15px;
-            align-items: start;
+            /* Real masonry: layoutMasonry() (in <script>) absolutely positions
+               every card into the shortest column and sets this height. */
+            position: relative;
+        }
+        .notes-grid > .note-card {
+            position: absolute;
+            top: 0; left: 0;
+            width: var(--masonry-min-col);
+        }
+        /* Animate re-packs (drag-reorder, typing, spacing changes) but not the
+           first placement: .masonry-placed is added one frame after layout,
+           so freshly rendered cards don't fly in from the top-left corner. */
+        .notes-grid > .note-card.masonry-placed {
+            transition: top 0.18s ease, left 0.18s ease, width 0.18s ease, box-shadow 0.2s;
         }
 
         /* --- Note Card --- */
@@ -275,13 +287,14 @@
             border-radius: 6px; background: transparent; cursor: pointer; padding: 2px;
         }
         .set-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+        .set-row input[type="range"] { width: 160px; accent-color: var(--accent); cursor: pointer; }
         .set-select, .reminder-fields select, .reminder-fields input {
             background: rgba(255,255,255,0.08); border: 1px solid var(--border-color);
             border-radius: 6px; color: var(--text-color); padding: 8px; font-family: inherit;
         }
         .set-select option, .reminder-fields option { background: #2a2b2e; }
 
-        /* --- Reminder picker (fill in fields instead of typing a format) --- */
+        /* --- Reminder picker (date via field, clock typed as e.g. 11:23) --- */
         .reminder-fields { display: flex; flex-direction: column; gap: 12px; }
         .reminder-fields label {
             display: flex; align-items: center; justify-content: space-between;
@@ -289,6 +302,7 @@
         }
         .reminder-fields input[type="date"] { color-scheme: dark; }
         .reminder-time { display: flex; align-items: center; gap: 5px; }
+        .reminder-time #remTime { width: 76px; text-align: center; }
         .reminder-current { color: var(--text-muted); font-size: 0.85rem; margin: -4px 0 0; }
 
         /* --- Drawing editor -------------------------------------------- */
@@ -680,7 +694,7 @@
         </div>
     </div>
 
-    <!-- Reminder picker: fill in the fields, no format to remember -->
+    <!-- Reminder picker: pick the date, TYPE the clock (e.g. 11:23) -->
     <div class="ui-modal-overlay" id="reminderModal" style="display:none;">
         <div class="ui-modal">
             <div class="ui-modal-message">Remind me</div>
@@ -689,9 +703,9 @@
                 <label>Date <input type="date" id="remDate"></label>
                 <label>Time
                     <span class="reminder-time">
-                        <select id="remHour"></select>
-                        <span>:</span>
-                        <select id="remMinute"></select>
+                        <input type="text" id="remTime" inputmode="numeric" autocomplete="off"
+                               spellcheck="false" maxlength="5" placeholder="13:30"
+                               onfocus="this.select()">
                         <select id="remAmPm" style="display:none;">
                             <option value="AM">AM</option>
                             <option value="PM">PM</option>
@@ -754,6 +768,7 @@
             bgColor: '#202124', sidebarColor: '#202124', accentColor: '#fbbc04',
             tooltips: true,
             timeFormat: '24h',       // '24h' (13:30) or '12h' (1:30 PM)
+            noteSpacing: 15,         // px between note cards; 0 = outlines overlap
             shortcuts: {
                 undo:   {enabled: true, ctrl: true,  shift: false, key: 'u', label: 'Undo'},
                 redo:   {enabled: true, ctrl: true,  shift: false, key: 'r', label: 'Redo'},
@@ -765,10 +780,11 @@
             const out = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
             try {
                 const raw = JSON.parse(localStorage.getItem('iginotes-settings') || '{}');
-                for (const k of ['bgColor','sidebarColor','accentColor','tooltips','timeFormat']) {
+                for (const k of ['bgColor','sidebarColor','accentColor','tooltips','timeFormat','noteSpacing']) {
                     if (raw[k] !== undefined) out[k] = raw[k];
                 }
                 if (out.timeFormat !== '12h' && out.timeFormat !== '24h') out.timeFormat = '24h';
+                out.noteSpacing = Math.min(60, Math.max(0, parseInt(out.noteSpacing, 10) || 0));
                 for (const a in out.shortcuts) {
                     if (raw.shortcuts && raw.shortcuts[a]) Object.assign(out.shortcuts[a], raw.shortcuts[a], {label: out.shortcuts[a].label});
                 }
@@ -785,6 +801,9 @@
             r.setProperty('--bg-color', appSettings.bgColor);
             r.setProperty('--sidebar-bg', appSettings.sidebarColor);
             r.setProperty('--accent', appSettings.accentColor);
+            // Note spacing lives in the App-behavior tab, but it's applied the
+            // same way: one CSS var that both the CSS and layoutMasonry() read.
+            r.setProperty('--masonry-gap', appSettings.noteSpacing + 'px');
         }
         applyAppearance();
 
@@ -898,6 +917,11 @@
                         <option value="24h" ${appSettings.timeFormat !== '12h' ? 'selected' : ''}>24-hour (13:30)</option>
                         <option value="12h" ${appSettings.timeFormat === '12h' ? 'selected' : ''}>12-hour (1:30 PM)</option>
                     </select>`) +
+                setRow('Note spacing', 'Gap between note cards, in pixels. At 0 the card outlines overlap into a single shared line (per device).',
+                    `<span style="display:flex; align-items:center; gap:10px;">
+                        <input type="range" min="0" max="60" step="1" value="${appSettings.noteSpacing}" oninput="setNoteSpacing(this.value)">
+                        <span id="noteSpacingVal" style="min-width:44px; text-align:right;">${appSettings.noteSpacing} px</span>
+                    </span>`) +
                 setRow('Empty trash after', 'Days a note stays in the trash before it is deleted forever. Stored on the server — applies to every device.',
                     `<span><input type="number" id="setTrashDays" min="1" max="3650" value="${s ? s.trash_days : 30}" ${ro}> days</span>`) +
                 `<div class="settings-actions">
@@ -918,6 +942,16 @@
             saveAppSettings();
             renderGrids();                 // reminder chips + timestamps
             if (editorNoteId !== null) renderNoteEditor();
+        }
+
+        function setNoteSpacing(v) {
+            v = Math.min(60, Math.max(0, parseInt(v, 10) || 0));
+            appSettings.noteSpacing = v;
+            saveAppSettings();
+            applyAppearance();             // writes --masonry-gap
+            const lbl = document.getElementById('noteSpacingVal');
+            if (lbl) lbl.textContent = `${v} px`;
+            layoutMasonry();               // live preview while the slider moves
         }
 
         // Every displayed date/time goes through these so the 12h/24h
@@ -2453,11 +2487,78 @@
 
             others.forEach(n => gridOthers.appendChild(createNoteElement(n)));
             document.querySelectorAll('#grid-pinned .note-card, #grid-others .note-card').forEach(applyThumbCrops);
-            // Re-apply masonry-like resizing
+            // Textarea heights first, then pack the cards into columns.
             document.querySelectorAll('textarea.auto-resize').forEach(autoResize);
+            layoutMasonry();
+            observeMasonry();        // re-pack whenever any card changes size
             refreshEditorIfOpen();   // keep the expanded editor in sync
             applyTooltips();         // honor Settings -> App behavior -> tooltips
         }
+
+        // --- Masonry layout --------------------------------------------------
+        // Google-Keep-style packing: fixed-width columns, every card drops into
+        // the currently shortest column, so DOM order still reads roughly
+        // left-to-right, top-to-bottom. Runs after every render, on window
+        // resizes, and (via ResizeObserver) whenever a card changes height --
+        // typing, images finishing to load, crops being applied, and so on.
+        function layoutMasonry() {
+            const cs = getComputedStyle(document.documentElement);
+            let gap = parseFloat(cs.getPropertyValue('--masonry-gap')) || 0;
+            const minCol = parseFloat(cs.getPropertyValue('--masonry-min-col')) || 240;
+            // Spacing 0 means the 1px card outlines OVERLAP into one shared
+            // line (like adjacent table cells), not a 2px double border.
+            if (gap <= 0) gap = -1;
+
+            document.querySelectorAll('.notes-grid').forEach(grid => {
+                const cards = [...grid.children].filter(el => el.classList.contains('note-card'));
+                if (!cards.length) { grid.style.height = '0px'; return; }
+
+                const width = grid.clientWidth;
+                const cols = Math.max(1, Math.floor((width + gap) / (minCol + gap)));
+                const colW = (width - gap * (cols - 1)) / cols;
+
+                // Pass 1: give every card its final width, and re-run the
+                // textarea auto-resize at that width, so pass 2 measures the
+                // height each card will REALLY have once its text re-wraps.
+                cards.forEach(c => {
+                    c.style.width = colW + 'px';
+                    c.querySelectorAll('textarea.auto-resize').forEach(autoResize);
+                });
+
+                // Pass 2: pack into the shortest column.
+                const heights = new Array(cols).fill(0);
+                cards.forEach(c => {
+                    const col = heights.indexOf(Math.min(...heights));
+                    c.style.left = (col * (colW + gap)) + 'px';
+                    c.style.top = heights[col] + 'px';
+                    heights[col] += c.offsetHeight + gap;
+                });
+                grid.style.height = Math.max(0, Math.max(...heights) - gap) + 'px';
+            });
+
+            // Turn move animations on only AFTER a card has been placed once.
+            requestAnimationFrame(() => {
+                document.querySelectorAll('.notes-grid > .note-card:not(.masonry-placed)')
+                    .forEach(c => c.classList.add('masonry-placed'));
+            });
+        }
+
+        // One observer for everything; renderGrids() re-registers the fresh
+        // cards after each rebuild. The rAF guard coalesces bursts (e.g. ten
+        // images finishing at once) into a single re-pack and keeps the
+        // observer->layout->observer cycle from looping.
+        let masonryQueued = false;
+        const masonryObserver = new ResizeObserver(() => {
+            if (masonryQueued) return;
+            masonryQueued = true;
+            requestAnimationFrame(() => { masonryQueued = false; layoutMasonry(); });
+        });
+        function observeMasonry() {
+            masonryObserver.disconnect();
+            document.querySelectorAll('.notes-grid').forEach(g => masonryObserver.observe(g));
+            document.querySelectorAll('.notes-grid > .note-card').forEach(c => masonryObserver.observe(c));
+        }
+        window.addEventListener('resize', layoutMasonry);
 
         // --- Live drag-to-reorder -------------------------------------------
         // While a card is dragged, the other cards move aside in real time and
@@ -2478,10 +2579,19 @@
                          : e.clientX < r.left + r.width / 2;
             // Only touch the DOM when the position actually changes,
             // otherwise dragover (which fires constantly) would thrash.
+            // Absolutely-positioned cards don't reflow on their own, so every
+            // real DOM move is followed by a re-pack (the .masonry-placed
+            // transition is what makes the other cards slide aside).
             if (before) {
-                if (card.previousElementSibling !== dragged) card.parentElement.insertBefore(dragged, card);
+                if (card.previousElementSibling !== dragged) {
+                    card.parentElement.insertBefore(dragged, card);
+                    layoutMasonry();
+                }
             } else {
-                if (card.nextElementSibling !== dragged) card.parentElement.insertBefore(dragged, card.nextElementSibling);
+                if (card.nextElementSibling !== dragged) {
+                    card.parentElement.insertBefore(dragged, card.nextElementSibling);
+                    layoutMasonry();
+                }
             }
         }
 
@@ -2491,7 +2601,10 @@
             g.addEventListener('dragover', (e) => {
                 if (!dragCard || dragCard.parentElement !== g) return;
                 e.preventDefault();
-                if (e.target === g && g.lastElementChild !== dragCard) g.appendChild(dragCard);
+                if (e.target === g && g.lastElementChild !== dragCard) {
+                    g.appendChild(dragCard);
+                    layoutMasonry();
+                }
             });
             g.addEventListener('drop', (e) => e.preventDefault());
         });
@@ -2899,28 +3012,39 @@
         }
 
         // --- Reminder picker -------------------------------------------------
-        // Fields instead of a typed "YYYY-MM-DD HH:MM" string. The hour list
-        // follows the 12h/24h time-format setting (App behavior tab).
+        // The date is a field; the clock is TYPED on the keyboard (e.g. 11:23),
+        // no dropdowns. The expected format follows the 12h/24h time-format
+        // setting (App behavior tab).
         let reminderTarget = null;   // {noteId, isCreator} while the modal is open
 
-        function fillReminderSelects(hour24, minute) {
-            const hourSel = document.getElementById('remHour');
-            const minSel = document.getElementById('remMinute');
+        function fillReminderTime(hour24, minute) {
+            const timeIn = document.getElementById('remTime');
             const ampmSel = document.getElementById('remAmPm');
             const is12 = appSettings.timeFormat === '12h';
             const p = n => String(n).padStart(2, '0');
-            hourSel.innerHTML = is12
-                ? Array.from({length: 12}, (_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')
-                : Array.from({length: 24}, (_, i) => `<option value="${i}">${p(i)}</option>`).join('');
-            minSel.innerHTML = Array.from({length: 60}, (_, i) => `<option value="${i}">${p(i)}</option>`).join('');
             ampmSel.style.display = is12 ? '' : 'none';
             if (is12) {
-                hourSel.value = String(hour24 % 12 || 12);
+                timeIn.value = `${hour24 % 12 || 12}:${p(minute)}`;
+                timeIn.placeholder = '1:30';
                 ampmSel.value = hour24 < 12 ? 'AM' : 'PM';
             } else {
-                hourSel.value = String(hour24);
+                timeIn.value = `${p(hour24)}:${p(minute)}`;
+                timeIn.placeholder = '13:30';
             }
-            minSel.value = String(minute);
+        }
+
+        // Forgiving: "11:23", "11.23", "1123", "9:5" and a bare hour like "14"
+        // all parse. Returns {hour, minute} in the CURRENT format's range
+        // (24h: hour 0-23, 12h: hour 1-12) or null when it isn't a time.
+        function parseReminderTime(raw) {
+            const m = String(raw).trim().match(/^(\d{1,2})(?:[:.\s]\s*(\d{1,2})|(\d{2}))?$/);
+            if (!m) return null;
+            const hour = parseInt(m[1], 10);
+            const minStr = m[2] !== undefined ? m[2] : m[3];
+            const minute = minStr !== undefined ? parseInt(minStr, 10) : 0;
+            if (minute > 59) return null;
+            if (appSettings.timeFormat === '12h' ? (hour < 1 || hour > 12) : hour > 23) return null;
+            return {hour, minute};
         }
 
         function addReminderPrompt(noteId, isCreator = false) {
@@ -2938,7 +3062,7 @@
             const p = n => String(n).padStart(2, '0');
             document.getElementById('remDate').value =
                 `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-            fillReminderSelects(d.getHours(), d.getMinutes());
+            fillReminderTime(d.getHours(), d.getMinutes());
 
             const cur = document.getElementById('remCurrent');
             cur.style.display = existing ? '' : 'none';
@@ -2966,8 +3090,15 @@
             const dateStr = document.getElementById('remDate').value;   // yyyy-mm-dd
             if (!dateStr) { await uiAlert('Pick a date for the reminder.'); return; }
             const [y, mo, day] = dateStr.split('-').map(Number);
-            let hour = parseInt(document.getElementById('remHour').value, 10) || 0;
-            const minute = parseInt(document.getElementById('remMinute').value, 10) || 0;
+            const parsed = parseReminderTime(document.getElementById('remTime').value);
+            if (!parsed) {
+                await uiAlert(appSettings.timeFormat === '12h'
+                    ? 'Type the time as H:MM, e.g. 11:23 (1-12 hours).'
+                    : 'Type the time as HH:MM, e.g. 11:23 (0-23 hours).');
+                return;
+            }
+            let hour = parsed.hour;
+            const minute = parsed.minute;
             if (appSettings.timeFormat === '12h') {
                 const pm = document.getElementById('remAmPm').value === 'PM';
                 hour = (hour % 12) + (pm ? 12 : 0);
@@ -2975,6 +3106,10 @@
             const d = new Date(y, mo - 1, day, hour, minute, 0, 0);      // local time
             if (isNaN(d)) { await uiAlert("That date doesn't exist — check the fields."); return; }
             applyReminder(d.toISOString());
+        });
+        // Enter inside the time field saves right away.
+        document.getElementById('remTime').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); document.getElementById('remSave').click(); }
         });
         document.getElementById('reminderModal').addEventListener('click', (e) => {
             if (e.target === e.currentTarget) closeReminderModal();
